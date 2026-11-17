@@ -21,6 +21,13 @@
     "sha256": "d18128ae5b85f2304c310acd98c53e735b68e8c04365c5e7025dd986eaa99f69"
   },
   {
+    "name": "RIFT — Cozy Companion",
+    "version": "1.0.1",
+    "category": "companions",
+    "path": "companions/rift/RIFT-Cozy-Companion.user.js",
+    "sha256": "cf51ae8705b2c5eaa6c1a19142551742578ab62fa26b4cc14089677e7b1e1b42"
+  },
+  {
     "name": "Car Drift Cursor",
     "version": "1.0.1",
     "category": "cursors",

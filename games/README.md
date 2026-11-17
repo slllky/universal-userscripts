@@ -10,3 +10,5 @@ Interactive games and playful activities on webpages.
 | [Soccer Ball & Cleat Cursor](soccer-cleats/) | 1.1.0 | A gently rolling soccer ball, cleat cursor, and directional kicks on any ordinary webpage. | [.user.js](soccer-cleats/Soccer-Cleats.user.js) |
 
 Open a script’s folder for its installation, permissions, and credits.
+
+Also see [RIFT — Cozy Companion](../companions/rift/), filed under Browser Companions. It includes playable rift adventures, expeditions, gardening, and a customizable sanctuary.
