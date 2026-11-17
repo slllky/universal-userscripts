@@ -1,0 +1,79 @@
+[
+  {
+    "name": "Beat — Browser Skater",
+    "version": "1.1.1",
+    "category": "companions",
+    "path": "companions/beat/Beat-Browser-Skater.user.js",
+    "sha256": "1304ea181565e9125ada95377be07d83d904c29af24f887fd75c51355bc0eb04"
+  },
+  {
+    "name": "Jake — Stretch Walker",
+    "version": "2.0.1",
+    "category": "companions",
+    "path": "companions/jake/Jake-Stretch-Walker.user.js",
+    "sha256": "00c787206cd76b3b0b0270317859865df617e77f26f489d4b4238f9084b31072"
+  },
+  {
+    "name": "Rengoku — Bottom Patrol",
+    "version": "1.1.0",
+    "category": "companions",
+    "path": "companions/rengoku/Rengoku-Bottom-Patrol.user.js",
+    "sha256": "d18128ae5b85f2304c310acd98c53e735b68e8c04365c5e7025dd986eaa99f69"
+  },
+  {
+    "name": "Car Drift Cursor",
+    "version": "1.0.1",
+    "category": "cursors",
+    "path": "cursors/car-drift/Car-Drift-Cursor.user.js",
+    "sha256": "08506b59fe6b85ad567f47c44d09cbd20ca6a02649a492e95b53e44007fe8549"
+  },
+  {
+    "name": "Sword Cursor - Three Spin Blades",
+    "version": "1.0.0",
+    "category": "cursors",
+    "path": "cursors/sword/Sword-Cursor.user.js",
+    "sha256": "c670617cfd80f2f1065b2e226e7b7ab50bea58800060ac13d4adaddd70e6f5f1"
+  },
+  {
+    "name": "Tiny Neon Heart Cursor Trail",
+    "version": "1.0.1",
+    "category": "effects",
+    "path": "effects/heart-cursor-trail/Heart-Cursor-Trail.user.js",
+    "sha256": "cafaeef1e11621e552c0cecb3ab28d5ced0c350d0c4c5f8e943bcb672955e4c6"
+  },
+  {
+    "name": "Typing Flames",
+    "version": "1.0.0",
+    "category": "effects",
+    "path": "effects/typing-flames/Typing-Flames.user.js",
+    "sha256": "570ad2aa2ca32837c2d9b49ae28ae74afdabd6264b3ec049e889eecc11aa1a8a"
+  },
+  {
+    "name": "Typing Glitch",
+    "version": "1.0.1",
+    "category": "effects",
+    "path": "effects/typing-glitch/Typing-Glitch.user.js",
+    "sha256": "811a1c19a3a89cdb908ec8b99ddb43a6183ab1e6d7aa3ae5b0fc708441437f33"
+  },
+  {
+    "name": "Typing Hearts",
+    "version": "1.0.1",
+    "category": "effects",
+    "path": "effects/typing-hearts/Typing-Hearts.user.js",
+    "sha256": "2261b8e2642f28e0df81b4c32721803d541f0319fa01b8f04c3723ef16422aff"
+  },
+  {
+    "name": "Pokémon · Tampermonkey Edition",
+    "version": "8.1.0",
+    "category": "games",
+    "path": "games/pokemon-tampermonkey-edition/Pokemon-Tampermonkey-Edition.user.js",
+    "sha256": "4e5ea405fee21e668a25075316416084032f47d8e4cd4414cb4f8c59fa1b0df3"
+  },
+  {
+    "name": "Soccer Ball & Cleat Cursor",
+    "version": "1.1.0",
+    "category": "games",
+    "path": "games/soccer-cleats/Soccer-Cleats.user.js",
+    "sha256": "556e5f40294d0bc36afaba6cfbfedfbd73070641bfd9cce2f5e492a7f419d532"
+  }
+]
