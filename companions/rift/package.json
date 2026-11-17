@@ -1,6 +1,6 @@
 {
   "name": "rift-cozy-companion",
-  "version": "1.0.1",
+  "version": "1.2.0",
   "private": true,
   "description": "Self-contained Tampermonkey companion and cozy browser RPG",
   "scripts": {
@@ -8,5 +8,5 @@
     "test": "node --test tests/*.test.cjs",
     "check": "node --check dist/RIFT-Cozy-Companion.user.js"
   },
-  "devDependencies": {"@napi-rs/canvas": "0.1.100"}
+  "devDependencies": {"@napi-rs/canvas": "0.1.100", "sharp": "0.35.5"}
 }

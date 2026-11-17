@@ -1,4 +1,4 @@
-# RIFT 1.0.1 — validation notes
+# RIFT 1.2.0 — validation notes
 
 ## Completed
 
@@ -12,7 +12,13 @@
 - Animation transform and expression checks, including reduced-motion behavior.
 - Game component checks using a real raster canvas: movement, collision, invulnerability, dash cooldown, starlight, Soothe, timeout, retry, unique completion payment, and suspended-tab timing.
 - Execution of every real view template with fresh and populated state; escaped names/memories; unique SVG definition IDs.
-- Direct visual inspection of rasterized original creature artwork across forms, palettes, accessories, sanctuary scenery, and the arena canvas.
+- Direct inspection of the generated creature atlas and conservatory, plus rendered light/dark palettes, accessories, and the arena canvas.
+- All three illustrated forms render visible pixels; the rabbit crop excludes neighboring axolotl gills.
+- Coat, accent, and iris changes affect the rendered illustration without changing its transparency mask.
+- Awake/contented frame switching and layered accessories render across all forms.
+- Actual wardrobe-preview functions leave state, ownership, currency, and history unchanged while trying locked accessories, palettes, or custom colors; leaving the preview restores the saved appearance.
+
+The art tests render production SVG with Sharp/librsvg. This renderer lacks embedded WebP decoding, so tests first losslessly re-encode the shipped image pixels to PNG for that renderer only. The shipped assets remain WebP. These are artwork/component checks, not full browser screenshots or browser rendering tests.
 
 ## Not verified
 

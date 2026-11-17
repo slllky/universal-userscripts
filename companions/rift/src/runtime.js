@@ -32,7 +32,8 @@ const RiftRuntime = (()=>{
        let bounce=walk?Math.abs(Math.sin(ph*12))*4:0;bounce+=dancing*Math.abs(Math.sin(ph*8))*9;
        const bodyTurn=dancing*Math.sin(ph*7)*7,headTurn=(move?Math.sin(ph*1.1)*1.4:0)+petting*5+dancing*Math.sin(ph*7+1)*8;
        p.whole?.setAttribute('transform',`translate(0 ${-bounce+sleeping*18}) rotate(${-sleeping*7} 120 170)`);
-       p.body?.setAttribute('transform',`translate(0 ${breathing}) rotate(${bodyTurn} 120 170)`);
+       const painted=r.svg.dataset?.art==='painted';
+       p.body?.setAttribute('transform',painted?`translate(0 ${breathing}) rotate(${bodyTurn+headTurn*.38+(move?this.pointer.x*.4:0)} 120 192) translate(120 214) scale(${1-(move?Math.sin(ph*2.1)*.006:0)} ${1+(move?Math.sin(ph*2.1)*.008:0)}) translate(-120 -214)`:`translate(0 ${breathing}) rotate(${bodyTurn} 120 170)`);
        p.head?.setAttribute('transform',`translate(0 ${breathing*.7}) rotate(${headTurn+(move?feeding*Math.sin(ph*11)*2:0)} 120 113)`);
        p.earL?.setAttribute('transform',`rotate(${(move?Math.sin(ph*1.9)*3:0)-petting*7+(this.dragging?12:0)} 75 85)`);
        p.earR?.setAttribute('transform',`rotate(${(move?Math.sin(ph*1.8+.9)*3:0)+petting*7-(this.dragging?12:0)} 165 85)`);

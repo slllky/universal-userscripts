@@ -1,5 +1,7 @@
 # Keeping the collection organized
 
+This repository is the source of truth for the user's Tampermonkey collection. Refer to the existing folder when updating a script, and add newly created userscripts here in the appropriate category. Keep each script universal unless its intended function requires a particular site; do not add arbitrary domain exclusions.
+
 ## Folder conventions
 
 Each script lives at `<category>/<script-slug>/<Script-Name>.user.js` with a `README.md` beside it. Use lowercase, hyphenated folder names. Keep version numbers in the userscript metadata and documentation so the installation path stays stable.
@@ -21,3 +23,4 @@ Each script lives at `<category>/<script-slug>/<Script-Name>.user.js` with a `RE
 6. Commit the change with a short description. Use Git history for older versions instead of adding duplicate source files or ZIP archives.
 
 Keep original credits and bundled license notices. Add new categories only when an existing one does not fit.
+

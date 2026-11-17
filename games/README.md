@@ -11,4 +11,4 @@ Interactive games and playful activities on webpages.
 
 Open a script’s folder for its installation, permissions, and credits.
 
-Also see [RIFT — Cozy Companion](../companions/rift/), filed under Browser Companions. It includes playable rift adventures, expeditions, gardening, and a customizable sanctuary.
+Also see [RIFT — Cozy Companion](../companions/rift/), filed under Browser Companions. Its Storybook Edition includes illustrated familiars, playable rift adventures, expeditions, gardening, and a customizable sanctuary.
