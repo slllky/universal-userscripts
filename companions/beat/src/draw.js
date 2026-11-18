@@ -4,17 +4,20 @@ const BeatDraw = (() => {
   const ink = '#162024', paper = '#fff9d6', pale = '#d8f9dc';
   const inks = {lime:'#c0fb33',pink:'#ff549d',cyan:'#48dbde'};
   const stickers = {bolt:0,cat:1,skull:2,can:3};
-  const timing = {idle:290,skate:135,boost:105,jump:125,grab:155,grind:140,tag:165,dance:145,land:125};
+  const timing = {idle:290,skate:135,boost:105,jump:125,grab:155,grind:140,tag:165,dance:145,land:125,
+    crossover:105,rocket:130,fishbrain:145,wallride:120,spin:95,manual:190};
+  const classicPoses = {crossover:'skate',rocket:'grab',fishbrain:'grind',wallride:'grab',spin:'dance',manual:'grind'};
+  const cycles = new Set(['skate','idle','dance','grind','boost','crossover','fishbrain','manual']);
   const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
   const bounded = v => clamp(v,0,1);
   const cycle = t => t-Math.floor(t);
   const fullCircle = 2*Math.PI;
   function frameFor(actor, meta, gentle) {
-    const key = meta.animations[actor.action]?.length ? actor.action : 'idle';
+    const key = meta.animations[actor.action]?.length ? actor.action : (classicPoses[actor.action] || 'idle');
     const seq = meta.animations[key];
     if (!seq?.length) return 0;
     if (gentle) return seq[key==='idle'||key==='skate' ? 0 : Math.floor(seq.length/2)];
-    const loops = key==='skate'||key==='idle'||key==='dance'||key==='grind'||key==='boost';
+    const loops = cycles.has(actor.action);
     const durations = meta.durations?.[key];
     const weighted = Array.isArray(durations) && durations.length===seq.length;
     const total = weighted ? durations.reduce((sum,n)=>sum+n,0) : seq.length*timing[key];
@@ -27,10 +30,19 @@ const BeatDraw = (() => {
   function geometry(actor,asset,scale,gentle) {
     const meta=asset.frames, n=frameFor(actor,meta,gentle), pivot=meta.pivot||[64,116];
     const cell=meta.cell, b=meta.bounds?.[n] || [0,0,cell,cell];
-    const flip=actor.direction!==(meta.facing ?? 1);
+    const facing=meta.facing ?? 1;
+    const turn=actor.action==='spin' && !gentle ? Math.cos(bounded(actor.progress)*fullCircle) : 1;
+    const fold=.49+.51*Math.abs(turn);
+    const flip=(actor.direction!==facing)!==(turn<0);
+    const top=b[1]-pivot[1],bottom=b[3]-pivot[1];
+    // Angle the shoulders away from the wall while the wheel pivot stays fixed. Keep the sheared ink in its cell.
+    const freeSide=facing>0?b[0]:cell-b[2];
+    const lean=actor.action==='wallride' && !gentle ? facing*Math.sin(Math.PI*bounded(actor.progress))*Math.min(.28,freeSide/Math.max(1,-top)) : 0;
+    const left=(b[0]-pivot[0]+Math.min(lean*top,lean*bottom))*fold;
+    const right=(b[2]-pivot[0]+Math.max(lean*top,lean*bottom))*fold;
     const x=Math.round(actor.x),y=Math.round(actor.y);
-    return {n,flip,x,y,rect:{x:x+(flip ? pivot[0]-b[2] : b[0]-pivot[0])*scale,
-      y:y+(b[1]-pivot[1])*scale,width:(b[2]-b[0])*scale,height:(b[3]-b[1])*scale}};
+    return {n,flip,fold,lean,x,y,rect:{x:x+(flip ? -right : left)*scale,
+      y:y+top*scale,width:(right-left)*scale,height:(bottom-top)*scale}};
   }
   function poly(g,points,fill) {
     g.fillStyle=fill;g.beginPath();g.moveTo(points[0][0],points[0][1]);
@@ -72,6 +84,22 @@ const BeatDraw = (() => {
     }
     g.restore();
   }
+  function wall(renderer,w,accent,level) {
+    const {x,y,top,side,alpha}=w.wall,s=w.scale,g=renderer.ctx;
+    const h=Math.max(4,(y-top)/s),depth=Math.min(25,Math.max(4,w.width/s/6));
+    const left=side<0?x-(depth+3)*s:x-3*s;
+    renderer.region(left,top-4*s,(depth+7)*s,(h+9)*s);
+    g.save();g.globalAlpha=bounded(alpha);g.translate(x,top);g.scale(side*s,s);
+    poly(g,[[0,1],[depth,-2],[depth,h+1],[0,h+3]],ink);
+    poly(g,[[2,3],[depth-6,0],[depth-6,h-1],[2,h]],'#597277');
+    poly(g,[[depth-6,0],[depth-2,-1],[depth-2,h-1],[depth-6,h]],'#33494e');
+    stroke(g,[[.5,1],[.5,h+1]],pale,1.5);
+    for(let y=11;y<h-3;y+=16){
+      stroke(g,[[3,y],[depth-2,y-2]],ink,1);
+      if(level!=='off')poly(g,[[5,y-6],[11,y-11],[12,y-9],[6,y-4]],accent);
+    }
+    g.restore();
+  }
   function tag(renderer,w,accent) {
     const tag=w.tag,g=renderer.ctx, unit=Math.min(w.scale,1.45);
     const span=Math.min(w.width,82*unit,w.height),inkX=clamp(tag.x,span/2,Math.max(span/2,w.width-span/2));
@@ -106,33 +134,73 @@ const BeatDraw = (() => {
     }
     g.restore();
   }
-  function shadow(renderer,w) {
-    const g=renderer.ctx,s=w.scale,a=w.hero,alt=Math.max(0,(w.ground-a.y)/s);
+  function shadow(renderer,w,a) {
+    const g=renderer.ctx,s=w.scale,alt=Math.max(0,(w.ground-a.y)/s);
     if(alt>120)return;
     const rx=19*s/(1+alt/125), ry=2.5*s/(1+alt/100),x=a.x,y=w.ground+2*s;
     renderer.region(x-rx,y-ry,rx*2,ry*2);g.save();
     g.globalAlpha=.20*a.alpha/(1+alt/45);ellipse(g,x,y,rx,ry,ink);g.restore();
   }
   function drawActor(renderer,a,asset,pose,s) {
-    const g=renderer.ctx,{n,x,y,flip,rect:b}=pose,meta=asset.frames;
+    const g=renderer.ctx,{n,x,y,flip,fold,lean,rect:b}=pose,meta=asset.frames;
     const {cell,columns,pivot=[64,116]}=meta;
     renderer.region(b.x,b.y,b.width,b.height);
-    g.save();g.globalAlpha=bounded(a.alpha);g.translate(x,y);g.scale(flip?-s:s,s);
+    g.save();g.globalAlpha=bounded(a.alpha);g.translate(x,y);
+    const horizontal=(flip?-1:1)*s*fold;
+    g.transform(horizontal,0,horizontal*lean,s,0,0);
     g.imageSmoothingEnabled=false;
     g.drawImage(asset.image,(n%columns)*cell,Math.floor(n/columns)*cell,cell,cell,-pivot[0],-pivot[1],cell,cell);
     g.restore();
   }
-  // All motion marks live near his wheels or shoulders. No screen-wide flashes or particles.
-  function accents(renderer,w,color,level,b) {
-    const g=renderer.ctx,a=w.hero,key=a.action;
-    if(level==='off'||w.gentle||!['boost','grind','grab','land','dance','tag'].includes(key))return;
+  // Light reflects off the engaged wheel; aerial moves use a longer arc around the rider.
+  const effects = new Set(['boost','grind','grab','land','dance','tag','crossover','rocket','fishbrain','wallride','spin','manual']);
+  function accents(renderer,w,a,color,level,b) {
+    const g=renderer.ctx,key=a.action;
+    if(level==='off'||w.gentle||!effects.has(key))return;
     const full=level==='full',s=w.scale,t=a.elapsed,p=bounded(a.progress),d=a.direction;
     const top=(b.y-a.y)/s, half=Math.min(26,b.width/(2*s));
-    renderer.region(a.x-78*s,Math.min(b.y-14*s,a.y-39*s),156*s,Math.max(53*s,a.y-b.y+25*s));
+    const fxTop=Math.min(b.y-14*s,a.y-39*s);
+    renderer.region(a.x-78*s,fxTop,156*s,a.y+26*s-fxTop);
     g.save();g.translate(a.x,a.y);g.scale(s*d,s);g.globalAlpha=bounded(a.alpha);
-    if(key==='grind'){
+    if(key==='wallride' && w.wall){
+      const contact=(w.wall.x-a.x)*d/s;
+      if(contact>0 && contact<21){
+        for(let i=0;i<(full?5:2);i++){
+          const u=cycle(t*2.4+i*.27),x=contact-1-u*(3+i),y=1+u*(5+i*1.6);
+          g.globalAlpha=(1-u)*a.alpha;
+          stroke(g,[[x,y],[x-2*u,y+4]],i%2?color:paper,1.4);
+        }
+      }
+    } else if(key==='spin'){
+      const rx=half+8, at=top*.43,phase=p*fullCircle;
+      g.globalAlpha*=Math.sin(Math.PI*p)*.90;
+      for(let i=0;i<(full?2:1);i++){
+        const a0=phase+i*Math.PI;
+        g.beginPath();g.ellipse(0,at,rx,5,-.16,a0,a0+1.6);
+        g.lineWidth=i?1.4:2;g.strokeStyle=i?paper:color;g.stroke();
+      }
+    } else if(key==='manual'){
+      const u=cycle(t*1.8),x=half*.45;
+      g.globalAlpha*=(1-u)*.75;
+      stroke(g,[[x-3,-.5],[x-8-u*8,-.5]],color,1.5);
+      if(full)diamond(g,x+2,-2,1.9,2.8,paper);
+    } else if(key==='crossover'){
+      for(let i=0;i<(full?3:2);i++){
+        const u=cycle(t*2.1+i*.44),x=-8-(8+i*3)*u,y=-2-i*1.6;
+        g.globalAlpha=(1-u)*a.alpha;
+        g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x-8,y+2,x-17-u*3,y-1.5);
+        g.lineWidth=i?1.2:1.8;g.strokeStyle=i?paper:color;g.stroke();
+      }
+    } else if(key==='rocket'){
+      const strength=Math.sin(Math.PI*p);
+      for(let i=0;i<(full?3:1);i++){
+        const u=cycle(p*1.65+i*.29),x=-half*.3-i*3-u*8,y=1+u*4.5;
+        g.globalAlpha=a.alpha*strength*(1-u)*.8;
+        poly(g,[[x,y],[x-7-u*9,y+2.5],[x-3,y+2]],i%2?paper:color);
+      }
+    } else if(key==='grind'||key==='fishbrain'){
       for(let i=0;i<(full?7:3);i++){
-        const u=cycle(t*2.7+i*.381),x=-5-u*(16+(i%3)*9),y=-2-(8+i%4*3)*Math.sin(Math.PI*u)+u*3;
+        const u=cycle(t*2.7+i*.381),x=(key==='fishbrain'?4:-5)-u*(16+(i%3)*9),y=-2-(8+i%4*3)*Math.sin(Math.PI*u)+u*3;
         g.globalAlpha=(1-u)*a.alpha;
         poly(g,[[x+2,y+1],[x,y-1.2],[x-3.5-u*3,y-2.5],[x-1,y+.4]],i%3===0?paper:color);
       }
@@ -162,7 +230,7 @@ const BeatDraw = (() => {
         g.globalAlpha=(1-u)*a.alpha;ellipse(g,x,y,2.5,1.8,color);
         stroke(g,[[x+2,y],[x+2,y-7],[x+6,y-5]],i?paper:color,1.7);
       }
-    } else if(w.tag && p>.15 && p<.88){
+    } else if(key==='tag' && w.tag && p>.15 && p<.88){
       for(let i=0;i<(full?7:2);i++){
         const u=cycle(t*3.1+i*.233),x=half*.63+8+u*12,y=top*.48+(i%3-1)*u*8;
         g.globalAlpha=(1-u)*a.alpha;diamond(g,x,y,1.5,1.5,color);
@@ -195,22 +263,30 @@ const BeatDraw = (() => {
       for(const rect of this.dirty)this.ctx.clearRect(...rect);
       this.dirty.length=0;this.hitBox=null;
     }
+    assetFor(actor,w) {
+      const rider=actor.rider || w.settings.rider || 'beat';
+      return rider==='beat' ? this.assets[w.settings.skin]||this.assets.remix||this.assets.classic : this.assets[rider];
+    }
+    drawRider(actor,w,accent,level) {
+      const asset=actor && this.assetFor(actor,w);
+      if(!asset?.image || actor.alpha<=0)return null;
+      const pose=geometry(actor,asset,w.scale,w.gentle);
+      if(level!=='off')shadow(this,w,actor);
+      drawActor(this,actor,asset,pose,w.scale);
+      accents(this,w,actor,accent,level,pose.rect);
+      return pose.rect;
+    }
     draw(w) {
       this.clear();
       if(w.settings.hidden)return;
-      const asset=this.assets[w.settings.skin]||this.assets.remix||this.assets.classic;
-      if(!asset?.image)return;
       const accent=inks[w.settings.accent]||inks.lime,level=w.settings.fx;
       if(w.tag)tag(this,w,inks[w.tag.accent]||accent);
+      if(w.wall)wall(this,w,accent,level);
       if(w.rail)rail(this,w,accent,level);
       for(const can of w.cans)pickup(this,can,w,accent);
-      if(w.hero.alpha<=0)return;
-      const a=w.hero,pose=geometry(a,asset,w.scale,w.gentle);
-      if(level!=='off')shadow(this,w);
-      drawActor(this,a,asset,pose,w.scale);
-      accents(this,w,accent,level,pose.rect);
-      combo(this,w,accent,pose.rect);
-      this.hitBox=pose.rect;
+      if(w.partner)this.drawRider(w.partner,w,pale,level==='full'?'low':level);
+      this.hitBox=this.drawRider(w.hero,w,accent,level);
+      if(this.hitBox)combo(this,w,accent,this.hitBox);
     }
   }
   return {Renderer,frameFor,geometry};

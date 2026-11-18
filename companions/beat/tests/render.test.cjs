@@ -4,9 +4,10 @@ const assert=require('node:assert/strict');
 const path=require('node:path');
 const {createCanvas,loadImage}=require('@napi-rs/canvas');
 const {Renderer,frameFor,geometry}=require('../src/draw.js');
-const {World}=require('../src/engine.js');
+const {World,riders,lines,duets}=require('../src/engine.js');
 const assetsRoot=path.resolve(__dirname,'../assets');
-const assetsPromise=Promise.all(['remix','classic','street'].map(async key=>{
+const riderAtlases=['remix','classic','gum','combo','yoyo','corn','zero','poison'];
+const assetsPromise=Promise.all([...riderAtlases,'street'].map(async key=>{
   const dir=path.join(assetsRoot,key);
   return [key,{frames:require(path.join(dir,'frames.json')),image:await loadImage(path.join(dir,'sheet.png'))}];
 })).then(Object.fromEntries);
@@ -15,9 +16,9 @@ function pixels(canvas) {
   return Buffer.from(canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data.buffer);
 }
 
-test('every pose in both skins is registered to the skates and can face either page edge',async()=>{
+test('every frame of every crew atlas is registered to the skates facing either page edge',async()=>{
   const assets=await assetsPromise;
-  for(const skin of ['remix','classic']){
+  for(const skin of riderAtlases){
     const asset=assets[skin],m=asset.frames;
     assert.equal(m.count,m.bounds.length);
     assert.equal(new Set(Object.values(m.animations).flat()).size,m.count);
@@ -80,4 +81,72 @@ test('a painted tag remains visible with decorative effects off; reduced motion 
   w.step(.7);assert.equal(first,frameFor(w.hero,sprites.remix.frames,w.gentle));
   w.hero.alpha=0;view.draw(w);assert.ok(pixels(canvas).some(Boolean));assert.equal(view.hitBox,null);
   w.tag=null;view.draw(w);assert.ok(!pixels(canvas).some(Boolean));
+});
+
+test('a duet uses two different atlases while only the lead owns the hitbox',async()=>{
+  const assets=await assetsPromise, w=new World({rider:'gum',skin:'classic',fx:'off'},480,210);
+  const lead={...w.hero,rider:'gum',x:131,action:'crossover',progress:.6,elapsed:.7,alpha:1};
+  const other={...lead,rider:'poison',action:'manual',x:341,direction:-1};
+  w.hero=lead;w.partner=other;
+  const canvas=createCanvas(w.width,w.height),renderer=new Renderer(canvas.getContext('2d'),assets);
+  renderer.draw(w);
+  const both=pixels(canvas);
+  assert.deepEqual(renderer.hitBox,geometry(lead,assets.gum,w.scale,w.gentle).rect);
+  w.partner=null;renderer.draw(w);
+  const justLead=pixels(canvas);
+  assert.ok(!both.equals(justLead));
+  for(let y=0;y<w.height;y++){
+    const offset=y*w.width*4;
+    const end=offset+Math.round(w.width/2)*4;
+    assert.ok(both.subarray(offset,end).equals(justLead.subarray(offset,end)));
+  }
+  lead.alpha=0;w.partner=other;renderer.draw(w);
+  assert.equal(renderer.hitBox,null);assert.ok(pixels(canvas).some(Boolean));
+});
+
+test('all six new moves render through both directions, back-to-back wall rides and direction changes without leftover pixels',async()=>{
+  const assets=await assetsPromise,w=new World({rider:'zero',partner:'auto',ambient:false,scale:1.25},440,242);
+  const cv=createCanvas(w.width,w.height),fresh=createCanvas(w.width,w.height);
+  const run=new Renderer(cv.getContext('2d'),assets),control=new Renderer(fresh.getContext('2d'),assets);
+  const seen=new Set();
+  for(const action of ['crossover','rocket','fishbrain','wallride','wallride','spin','manual']){
+    assert.ok(w.perform(action),action);
+    let n=0;
+    while(w.trick && n++<120){
+      w.step(.09);w.takeEvents();if(w.hero.action===action)seen.add(action);
+      run.draw(w);fresh.getContext('2d').clearRect(0,0,w.width,w.height);control.draw(w);
+      assert.ok(pixels(cv).equals(pixels(fresh)),'dirty bounds '+action+' / '+n);
+    }
+    assert.ok(n<120);
+  }
+  assert.equal(seen.size,6);
+});
+
+test('each rider can complete the automatic Free Skate deck and all five reduced-motion duets fit at phone width',async()=>{
+  const assets=await assetsPromise;
+  for(const rider of Object.keys(riders)){
+    const w=new World({rider,scale:1.1,speed:2,ambient:true,motion:'full'},347,199,()=>.4);
+    const canvas=createCanvas(w.width,w.height),view=new Renderer(canvas.getContext('2d'),assets);
+    const seen=new Set(), pairs=new Set(), lineCount=Object.keys(lines).length;
+    for(let i=0;i<2700&&seen.size<lineCount;i++){
+      w.step(.15);w.takeEvents();
+      if(w.line?.source!=='ambient')continue;
+      if(w.hero.alpha>0){
+        view.draw(w);
+        const b=view.hitBox;
+        assert.ok(b && b.x>=-.5 && b.y>=-.5 && b.x+b.width<=w.width+.5 && b.y+b.height<=w.height+.5);
+      }
+      if(w.partner?.alpha>.1)pairs.add(w.line.id);
+      if(w.line.index===w.line.total-1)seen.add(w.line.id);
+    }
+    assert.equal(seen.size,lineCount,rider);assert.equal(pairs.size,duets.length,rider);
+    w.apply({motion:'reduced',ambient:false});
+    for(const id of duets){
+      const calm=new World({...w.settings,scale:1.1},321,183);
+      calm.perform(id);calm.step(.35);view.draw(calm);
+      assert.ok(calm.partner);assert.ok(view.hitBox);
+      const asset=view.assetFor(calm.partner,calm),b=geometry(calm.partner,asset,calm.scale,true).rect;
+      assert.ok(b.x>=-.5&&b.x+b.width<=calm.width+.5&&b.y>=-.5&&b.y+b.height<=calm.height+.5);
+    }
+  }
 });

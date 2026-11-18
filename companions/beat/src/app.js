@@ -6,10 +6,11 @@
   const prefix = 'beat-skater-v1:';
   const shared = !BEAT_PREVIEW && typeof GM_getValue === 'function' && typeof GM_setValue === 'function';
   const fallback = new Map();
+  const persistentKeys = new Set(['settings','best-v2','volume-v2','track-v3','order-v3']);
   function read(key, initial) {
     try {
       if (shared) return GM_getValue(prefix + key, initial);
-      if (BEAT_PREVIEW && (key === 'settings' || key === 'best-v2' || key === 'volume-v2')) {
+      if (BEAT_PREVIEW && persistentKeys.has(key)) {
         const value = window.localStorage.getItem('preview/' + prefix + key);
         if (value !== null) return JSON.parse(value);
       }
@@ -20,7 +21,7 @@
     fallback.set(key, value);
     try {
       if (shared) GM_setValue(prefix + key, value);
-      else if (BEAT_PREVIEW && (key === 'settings' || key === 'best-v2' || key === 'volume-v2')) window.localStorage.setItem('preview/' + prefix + key, JSON.stringify(value));
+      else if (BEAT_PREVIEW && persistentKeys.has(key)) window.localStorage.setItem('preview/' + prefix + key, JSON.stringify(value));
     } catch { /* Keep the session running when persistence is unavailable. */ }
   }
   function watch(key, fn) {
@@ -58,12 +59,31 @@
   let summoningForMove = false;
   let raf = 0, frameTime = null, ratio = 1, width = 1, height = 1, statsStamp = '';
   const cleanup = [];
-  const radio = BeatAudio.create(window);
+  let panel = null;
+  let order = validOrder(read('order-v3','sequence'));
+  const radio = BeatAudio.create(window,{onTrack(track) {
+    if (!panel) return;
+    panel.station(track,order);
+    if (read('track-v3','curbside') !== track.id) write('track-v3',track.id);
+  }});
+  radio.select(read('track-v3','curbside')); radio.setOrder(order);
+  function validOrder(value) { return ['loop','sequence','shuffle'].includes(value) ? value : 'sequence'; }
+  function changeOrder(value, persist) {
+    order = validOrder(value); radio.setOrder(order); panel.station(radio.current(),order);
+    if (persist) write('order-v3',order);
+  }
+  const portraits = Object.fromEntries(Object.keys(BeatEngine.riders).map(id =>
+    [id,'data:image/png;base64,' + bundles[id === 'beat' ? 'remix' : id].portrait]
+  ));
   const clampVolume = value => typeof value === 'number' && Number.isFinite(value) ? Math.max(0,Math.min(1,value)) : .35;
   let volume = clampVolume(read('volume-v2',.35)), audioEpoch = 0;
   radio.setVolume(volume);
-  const panel = BeatPanel.mount(root, {
+  panel = BeatPanel.mount(root, {
     settings:world.settings, moves:BeatEngine.moves, lines:BeatEngine.lines,
+    tracks:BeatAudio.tracks, portraits, riders:BeatEngine.riders, signatures:BeatEngine.signatures,
+    lineMoves:BeatEngine.lineMoves, duets:BeatEngine.duets,
+    onTrack:id => radio.select(id), onStationStep:direction => direction < 0 ? radio.previous() : radio.next(),
+    onOrder:mode => changeOrder(mode,true),
     onChange:patch => apply({...read('settings', world.settings), ...patch}, true),
     onRadio:toggleRadio, onVolume:value => { applyVolume(value); write('volume-v2',volume); },
     onMove:perform, onJump:() => pages ? pages.jump() : 'Loading Beat…'
@@ -87,15 +107,22 @@
       if (disposed || audioEpoch !== epoch) return;
       playing = on;
       panel.audio(on,volume);
-      panel.status(on ? 'On air · Breakbeat playing' : wasPlaying ? 'Tape stopped' : 'Audio is unavailable on this page');
+      panel.status(on ? 'On air · ' + radio.current().title : wasPlaying ? 'Tape stopped' : 'Audio is unavailable on this page');
     } catch { if (audioEpoch === epoch) { quietRadio(); panel.status('Audio is unavailable on this page'); } }
   }
   applyVolume(volume);
+  panel.station(radio.current(),order);
+  syncActorLabel();
+  function syncActorLabel() {
+    const label = BeatEngine.riders[world.settings.rider] || 'Beat';
+    hit.title = label + ' · Click to dance, right-click for Beat FM';
+    hit.setAttribute('aria-label',label + '. Dance, or open the radio with Shift F10.');
+  }
   function apply(settings, persist) {
     const wasHidden = world.settings.hidden;
     world.apply(BeatEngine.normalize(settings || {}));
     if (persist) write('settings', {...world.settings});
-    panel.sync(world.settings);
+    panel.sync(world.settings); syncActorLabel(); scorePanel();
     if (view && wasHidden !== world.settings.hidden) {
       if (world.settings.hidden) pages.stop();
       else pages.start();
@@ -138,10 +165,13 @@
   function scorePanel() {
     const line = world.line ? BeatEngine.lines[world.line.id] : '';
     const score = world.combo.score, count = world.combo.count, best = world.best;
-    const stamp = [score,count,best,line].join('/');
+    const source = world.line?.source || '', step = world.line ? world.line.index + 1 : 0;
+    const total = world.line?.total || 0, partner = BeatEngine.riders[world.partner?.rider] || '';
+    const rider = BeatEngine.riders[world.settings.rider];
+    const stamp = [score,count,best,line,step,source,partner,rider].join('/');
     if (stamp === statsStamp) return;
     statsStamp = stamp;
-    panel.stats({score,count,best,line});
+    panel.stats({score,count,best,line,step,total,source,partner,rider});
   }
   function processEvents() {
     for (const event of world.takeEvents()) {
@@ -241,6 +271,7 @@
     }
   });
   cleanup.push(watch('settings',value => apply(value,false)), watch('volume-v2',applyVolume),
+    watch('track-v3',value => radio.select(value)), watch('order-v3',value => changeOrder(value,false)),
     watch('best-v2',value => { world.setBest(Math.max(world.best, Number(value) || 0)); scorePanel(); }));
   if (!BEAT_PREVIEW && typeof GM_registerMenuCommand === 'function') {
     GM_registerMenuCommand('Beat: controls / bring here',bringAndOpen);

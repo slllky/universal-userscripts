@@ -3,21 +3,24 @@ const BeatPanel = (() => {
   'use strict';
 
   const tape = '<span class="bt-tape" aria-hidden="true"><i></i><b></b><i></i></span>';
-  const chapters = {session:'Session', tricks:'Trick deck', setup:'Setup'};
+  const chapters = {session:'Crew', tricks:'Tricks', station:'Radio', setup:'Setup'};
   const rangeFields = {
     speed:['Skate speed',0.5,2,0.1,'×'], scale:['Sprite size',1,3,0.1,'×'],
     delay:['Trail delay',1,8,1,' s'], offset:['Ground clearance',0,80,1,' px']
   };
-  const toggleFields = {hidden:'Show Beat', ambient:'Freestyle while cruising', interact:'Clickable skater'};
+  const toggleFields = {hidden:'Show skater', ambient:'Auto combos in Free skate', interact:'Clickable skater'};
   const pickFields = {
     mode:['Skating mode',{idle:'Free skate',follow:'Cursor trail'}],
-    skin:['Sprite set',{remix:'Remix',classic:'Classic'}],
+    skin:['Beat’s sprite set',{remix:'Remix',classic:'Classic'}],
     accent:['Paint color',{lime:'Lime',pink:'Pink',cyan:'Cyan'}],
     fx:['Visual effects',{off:'Off',low:'Low',full:'Full'}],
     motion:['Motion',{system:'Use device setting',reduced:'Reduced',full:'Full motion'}]
   };
 
-  function mount(root, {settings,moves,lines,onChange,onMove,onJump,onRadio,onVolume}) {
+  function mount(root, {
+    settings,moves,lines,riders={beat:'Beat'},signatures={},duets=[],lineMoves={},tracks=[],portraits:initialPortraits={},
+    onChange,onMove,onJump,onRadio,onVolume,onTrack,onStationStep,onOrder
+  }) {
     const doc = root.ownerDocument;
     const ui = doc.createElement('div');
     ui.className = 'bt-radio';
@@ -43,28 +46,45 @@ const BeatPanel = (() => {
         <div class="bt-tabs" role="tablist" aria-label="Beat FM controls">${buttons}</div>
         <div class="bt-pages">
           <section id="bt-page-session" role="tabpanel" aria-labelledby="bt-tab-session">
+            <fieldset class="bt-group bt-crew"><legend>Featured skater</legend><div class="bt-roster"></div></fieldset>
+            <button type="button" class="bt-featured" hidden><span>Run signature</span><strong></strong><i aria-hidden="true">▷</i></button>
+            <div class="bt-select bt-partner"><label for="bt-control-partner">Duet partner</label><select id="bt-control-partner"></select></div>
+            <div class="bt-switches"><div data-field="ambient"></div></div>
             <div data-field="mode"></div>
-            <p class="bt-trail-help" hidden>Move your cursor to leave paint cans for Beat to collect.</p>
+            <p class="bt-trail-help" hidden>Move your cursor to leave paint cans for your skater.</p>
             <div data-field="delay" hidden></div>
-            <div class="bt-switches"><div data-field="hidden"></div><div data-field="ambient"></div><div data-field="interact"></div></div>
-            <div class="bt-stereo">
-              <button type="button" class="bt-transport" aria-label="Play breakbeat"><i aria-hidden="true"></i><span>Play breakbeat</span></button>
-              <label for="bt-volume">Volume <span class="bt-volume-value" aria-hidden="true">35%</span></label>
-              <input id="bt-volume" type="range" min="0" max="100" step="1" value="35" aria-valuetext="35 percent">
-            </div>
             <button type="button" class="bt-hop">Jump to another tab <span aria-hidden="true">↗</span></button>
           </section>
           <section id="bt-page-tricks" role="tabpanel" aria-labelledby="bt-tab-tricks" hidden>
-            <p class="bt-sequence" hidden></p>
-            <h3>Tricks</h3><div class="bt-pads" data-bank="moves"></div>
             <h3>Combo lines</h3><div class="bt-lines" data-bank="lines"></div>
+            <h3>Individual tricks</h3><div class="bt-pads" data-bank="moves"></div>
+          </section>
+          <section id="bt-page-station" role="tabpanel" aria-labelledby="bt-tab-station" hidden>
+            <div class="bt-track-face">
+              <div class="bt-track-details"><p class="bt-track-title"></p><p class="bt-track-meta"></p></div>
+              <div class="bt-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <div class="bt-playbar">
+              <button type="button" class="bt-skip" data-step="-1" aria-label="Previous track" title="Previous track">◂◂</button>
+              <button type="button" class="bt-transport" aria-label="Play radio"><i aria-hidden="true"></i><span>Play radio</span></button>
+              <button type="button" class="bt-skip" data-step="1" aria-label="Next track" title="Next track">▸▸</button>
+            </div>
+            <div class="bt-select bt-library"><label for="bt-track">Track library</label><select id="bt-track"></select></div>
+            <div class="bt-select"><label for="bt-order">Playback order</label><select id="bt-order">
+              <option value="sequence">Play in order</option><option value="shuffle">Shuffle tracks</option><option value="loop">Repeat track</option>
+            </select></div>
+            <div class="bt-fader bt-volume"><label for="bt-volume">Volume</label><span class="bt-volume-value" aria-hidden="true">35%</span>
+              <input id="bt-volume" type="range" min="0" max="100" step="1" value="35" aria-valuetext="35 percent">
+            </div>
           </section>
           <section id="bt-page-setup" role="tabpanel" aria-labelledby="bt-tab-setup" hidden>
+            <div class="bt-switches"><div data-field="hidden"></div><div data-field="interact"></div></div>
             <div data-field="skin"></div><div data-field="accent"></div>
             <div class="bt-faders"><div data-field="speed"></div><div data-field="scale"></div><div data-field="offset"></div></div>
             <div data-field="fx"></div><div data-field="motion"></div>
           </section>
         </div>
+        <div class="bt-live" hidden><div><b class="bt-sequence"></b><span class="bt-cast"></span></div><span class="bt-step" hidden></span></div>
         <div class="bt-footer"><i aria-hidden="true"></i><span role="status" aria-live="polite" aria-atomic="true">Free skating</span></div>
       </section>`;
     root.append(ui);
@@ -89,13 +109,82 @@ const BeatPanel = (() => {
       if (typeof text === 'string' && text !== statusText.textContent) statusText.textContent = text;
     }
     function sessionStatus() {
-      return state.hidden ? 'Beat is hidden' : state.mode === 'follow' ? 'Following the cursor trail' : 'Free skating';
+      return state.hidden ? (riders[state.rider] || 'Beat') + ' is hidden' : state.mode === 'follow' ? 'Following the cursor trail' : 'Free skating';
     }
     function edit(key,value) {
       if (state[key] === value) return;
       sync({[key]:value});
       onChange({[key]:value});
     }
+    function selectValue(select,value) {
+      // Only change the chosen option. Deselecting every other option in turn can reset native selects.
+      const option = Array.from(select.options).find(item => item.value === value);
+      if (option) option.selected = true;
+    }
+    function run(id,name) {
+      if (!id || state.hidden) return;
+      const result = onMove(id);
+      status(typeof result === 'string' ? result : result === false ? 'Move unavailable. Try again in a moment.' : name);
+    }
+    const mugshots = new Map();
+    const riderInputs = new Map();
+    const roster = get('.bt-roster');
+    const partner = get('#bt-control-partner');
+    for (const [id,name] of Object.entries({auto:'Crew rotation',off:'Skate solo',...riders})) {
+      append(partner,'option',name).value = id;
+    }
+    for (const [id,name] of Object.entries(riders)) {
+      const label = append(roster,'label');
+      const radio = append(label,'input');
+      radio.type = 'radio'; radio.name = 'beat-fm-rider'; radio.value = id;
+      const card = append(label,'span');
+      card.className = 'bt-card'; card.dataset.rider = id;
+      const art = append(card,'img');
+      art.alt = ''; art.hidden = true;
+      // Some sites disallow data: images through CSP. A decoded local bitmap can still be drawn.
+      art.addEventListener('error',async () => {
+        const src = art.getAttribute('src');
+        art.hidden = true;
+        const win = doc.defaultView;
+        if (!src?.startsWith('data:image/png;base64,') || !win?.createImageBitmap) return;
+        try {
+          const bytes = Uint8Array.from(win.atob(src.slice(src.indexOf(',') + 1)),char => char.charCodeAt(0));
+          const bitmap = await win.createImageBitmap(new win.Blob([bytes],{type:'image/png'}));
+          try {
+            if (art.getAttribute('src') !== src || !card.isConnected) return;
+            const canvas = card.querySelector('canvas') || doc.createElement('canvas');
+            canvas.width = bitmap.width; canvas.height = bitmap.height;
+            canvas.getContext('2d').drawImage(bitmap,0,0);
+            canvas.setAttribute('aria-hidden','true');
+            card.insertBefore(canvas,art);
+          } finally { bitmap.close(); }
+        } catch { /* The skater can still be selected by name. */ }
+      });
+      append(card,'b',name);
+      mugshots.set(id,art); riderInputs.set(id,radio);
+      radio.addEventListener('change',() => { if (radio.checked) edit('rider',id); });
+    }
+    function portraits(sources) {
+      for (const [id,src] of Object.entries(sources)) {
+        const image = mugshots.get(id);
+        if (image && typeof src === 'string' && src.startsWith('data:image/') && src !== image.getAttribute('src')) {
+          image.parentNode.querySelector('canvas')?.remove();
+          image.src = src; image.hidden = false;
+        }
+      }
+    }
+    portraits(initialPortraits);
+    const featured = get('.bt-featured');
+    bindings.set('rider',id => {
+      for (const [key,input] of riderInputs) input.checked = key === id;
+      const line = signatures[id];
+      featured.hidden = !lines[line];
+      featured.querySelector('strong').textContent = lines[line] || '';
+      featured.setAttribute('aria-label','Run ' + (riders[id] || 'skater') + ' signature: ' + (lines[line] || ''));
+    });
+    featured.addEventListener('click',() => run(signatures[state.rider],lines[signatures[state.rider]]));
+    actionButtons.push(featured);
+    partner.addEventListener('change',() => edit('partner',partner.value));
     for (const [key,[title,min,max,step,unit]] of Object.entries(rangeFields)) {
       const row = get(`[data-field="${key}"]`);
       row.className = 'bt-fader';
@@ -141,9 +230,7 @@ const BeatPanel = (() => {
         select.id = 'bt-control-' + key;
         label.setAttribute('for',select.id);
         for (const [value,name] of Object.entries(choices)) append(select,'option',name).value = value;
-        bindings.set(key,value => {
-          for (const option of select.options) option.selected = option.value === value;
-        });
+        bindings.set(key,value => selectValue(select,value));
         select.addEventListener('change',() => edit(key,select.value));
         continue;
       }
@@ -166,21 +253,57 @@ const BeatPanel = (() => {
       }
       bindings.set(key,value => { for (const radio of radios) radio.checked = radio.value === value; });
     }
-    for (const [bank,items] of Object.entries({moves,lines})) {
-      const group = get(`[data-bank="${bank}"]`);
-      for (const [id,name] of Object.entries(items)) {
-        const pad = append(group,'button',name);
-        pad.type = 'button';
-        pad.dataset.move = id;
-        if (bank === 'lines') append(pad,'span','▷').setAttribute('aria-hidden','true');
-        pad.addEventListener('click',() => {
-          if (state.hidden) return;
-          const result = onMove(id);
-          status(typeof result === 'string' ? result : result === false ? 'Finish the current move first' : name);
-        });
-        actionButtons.push(pad);
+    function pad(parent,id,name) {
+      const button = append(parent,'button');
+      button.type = 'button';
+      button.dataset.move = id;
+      button.addEventListener('click',() => run(id,name));
+      actionButtons.push(button);
+      return button;
+    }
+    const moveBank = get('[data-bank="moves"]');
+    for (const [id,name] of Object.entries(moves)) pad(moveBank,id,name).textContent = name;
+    const lineBank = get('[data-bank="lines"]');
+    const signatureOwners = Object.fromEntries(Object.entries(signatures).map(([rider,line]) => [line,riders[rider]]));
+    const lineEntries = Object.entries(lines);
+    const lineGroups = [
+      ['Crew signatures',lineEntries.filter(([id]) => signatureOwners[id])],
+      ['Duets',lineEntries.filter(([id]) => duets.includes(id))],
+      ['Street lines',lineEntries.filter(([id]) => !signatureOwners[id] && !duets.includes(id))]
+    ];
+    for (const [title,entries] of lineGroups) {
+      if (!entries.length) continue;
+      const group = append(lineBank,'details');
+      const summary = append(group,'summary',title);
+      append(summary,'span',String(entries.length));
+      for (const [id,name] of entries) {
+        const button = pad(group,id,name);
+        const label = append(button,'b',name);
+        const info = [signatureOwners[id],duets.includes(id) ? 'Duet' : ''].filter(Boolean).join(' · ');
+        if (info) append(label,'small',info);
+        const route = (lineMoves[id] || []).map(move => moves[move] || move);
+        if (route.length) append(button,'span',route.join(' → '));
+        button.title = 'Run ' + name;
       }
     }
+    const trackSelect = get('#bt-track');
+    const orderSelect = get('#bt-order');
+    for (const track of tracks) append(trackSelect,'option',track.title).value = track.id;
+    function station(record,order) {
+      const track = typeof record === 'string' ? tracks.find(entry => entry.id === record) : record;
+      if (track) {
+        selectValue(trackSelect,track.id);
+        get('.bt-track-title').textContent = track.title;
+        get('.bt-track-meta').textContent = [track.genre,track.bpm + ' BPM'].join('  /  ');
+      }
+      if (order) selectValue(orderSelect,order);
+    }
+    trackSelect.addEventListener('change',() => onTrack?.(trackSelect.value));
+    orderSelect.addEventListener('change',() => onOrder?.(orderSelect.value));
+    for (const button of ui.querySelectorAll('[data-step]')) {
+      button.addEventListener('click',() => onStationStep?.(Number(button.dataset.step)));
+    }
+    station(tracks[0],'sequence');
     const transport = get('.bt-transport');
     const volumeInput = get('#bt-volume');
     const volumeLabel = get('.bt-volume-value');
@@ -191,7 +314,8 @@ const BeatPanel = (() => {
       volumeLabel.textContent = percent + '%';
     }
     function audio(on,volume) {
-      const text = on ? 'Stop breakbeat' : 'Play breakbeat';
+      const text = on ? 'Stop radio' : 'Play radio';
+      ui.dataset.playing = String(Boolean(on));
       transport.dataset.playing = String(Boolean(on));
       transport.setAttribute('aria-label',text);
       transport.querySelector('span').textContent = text;
@@ -215,19 +339,34 @@ const BeatPanel = (() => {
       for (const [key,show] of bindings) {
         if (key in patch) show(state[key]);
       }
+      if ('rider' in patch || 'partner' in patch) {
+        for (const option of partner.options) option.disabled = option.value === state.rider;
+        selectValue(partner,state.partner === state.rider ? 'auto' : state.partner);
+      }
       ui.dataset.accent = state.accent;
       ui.dataset.motion = state.motion;
       get('[data-field="delay"]').hidden = state.mode !== 'follow';
       get('.bt-trail-help').hidden = state.mode !== 'follow';
       for (const pad of actionButtons) pad.disabled = Boolean(state.hidden);
-      if (previous.mode !== state.mode || previous.hidden !== state.hidden) status(sessionStatus());
+      if (previous.mode !== state.mode || previous.hidden !== state.hidden || (previous.rider !== state.rider && state.hidden)) status(sessionStatus());
     }
-    function stats({score=0,best=0,count=0,line=''} = {}) {
-      const sequence = get('.bt-sequence');
+    function stats({score=0,best=0,count=0,line='',step=0,total=0,source='',partner='',rider=''} = {}) {
       const countText = count ? count + (count === 1 ? ' trick' : ' tricks') : '';
       const description = [line,countText].filter(Boolean).join(' · ');
-      sequence.hidden = !description;
+      const cast = [riders[rider] || rider,riders[partner] || partner].filter(Boolean).join(' + ');
+      const sourceText = source === 'ambient' ? 'Free skate' : source === 'manual' ? 'Manual' : '';
+      const names = [sourceText,cast].filter(Boolean).join(' · ');
+      const position = step && total && line ? step + ' / ' + total : '';
+      const sequence = get('.bt-sequence'), people = get('.bt-cast'), progress = get('.bt-step');
+      get('.bt-live').hidden = !description;
       if (sequence.textContent !== description) sequence.textContent = description;
+      if (people.textContent !== names) people.textContent = names;
+      people.hidden = !names;
+      progress.hidden = !position;
+      if (progress.textContent !== position) {
+        progress.textContent = position;
+        progress.setAttribute('aria-label','Step ' + step + ' of ' + total);
+      }
       const values = {score:String(score),best:String(best)};
       for (const [key,value] of Object.entries(values)) {
         if (counter[key].textContent !== value) counter[key].textContent = value;
@@ -295,9 +434,9 @@ const BeatPanel = (() => {
     const dockObserver = Observer ? new Observer(place) : null;
     place();
     dockObserver?.observe(doc.documentElement,{childList:true});
-    sync(settings);
+    sync({rider:'beat',partner:'auto',...settings});
     return {
-      open,close,toggle,isOpen:() => !panel.hidden,sync,stats,status,audio,
+      open,close,toggle,isOpen:() => !panel.hidden,sync,stats,status,audio,station,portraits,
       destroy() {
         doc.removeEventListener('pointerdown',outside,true);
         dockObserver?.disconnect();

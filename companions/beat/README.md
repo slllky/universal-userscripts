@@ -1,39 +1,65 @@
 # Beat — Browser Skater
 
-**Version 2.0.0** · [Install or update in Tampermonkey](https://raw.githubusercontent.com/slllky/universal-userscripts/main/companions/beat/Beat-Browser-Skater.user.js)
+**Version 3.0.0** · [Install or update in Tampermonkey](https://raw.githubusercontent.com/slllky/universal-userscripts/main/companions/beat/Beat-Browser-Skater.user.js) · [Hear the station sampler](docs/beat-fm-sampler.mp3)
 
-![Beat performs rail and aerial trick lines](docs/beat-motion.gif)
+![Seven skaters performing their signatures in Free Skate](docs/beat-motion.gif)
 
-Open the cassette in the bottom-left corner and try **Trick deck → Sidewinder**. Beat pushes off, locks onto a rail, pops out, and paints one of three graffiti tags on the overlay. **Air mail** pairs a hop with a mute grab and finishes with a dance break. Click Beat to dance or right-click him for the radio.
+Open the bottom-left cassette and pick **Yo-Yo** under **Crew**. Set his duet partner to **Corn**, leave **Free skate** and **Auto combos in Free skate** on, and give them four seconds. Yo-Yo opens with a crossover while Corn answers with a toe manual. The pair trade parts until they finish the seven-step Yo-Yo Exchange. The live card shows the performers and current step.
 
-## Play
+## Skate
 
-| Beat FM | Controls |
+| Lead | Signature line |
 |---|---|
-| Session | Free skate, delayed cursor trails, ambient tricks, show/hide, clickable skater and hopping between open tabs. Press Play for an original synthesized breakbeat and set the volume. |
-| Trick deck | Pop hop, mute grab, soul grind, spray tag, power stride and an eight-second dance break. Both combo lines are playable here. |
-| Setup | Remix or Classic sprites, lime/pink/cyan paint, sprite size, skate speed, ground clearance, effects and motion. |
+| Beat | Needle Thread |
+| Gum | Sugar Rush |
+| Combo | Bass Drop |
+| Yo-Yo | Yo-Yo Exchange |
+| Corn | Kernel Panic |
+| Zero Beat | Dead Channel |
+| Poison Jam | Toxic Spill |
 
-**Cursor trail.** Move your pointer across the page and Beat follows your route four seconds later. Choose a delay from one to eight seconds. He picks up the cans along the way. The trail holds up to 60 cans, each lasting up to one minute of active skating.
+**Free Skate.** Each lead opens with their signature. After short cruising breaks, the crew works through all 15 routines before recycling the set. Five routines give two skaters different parts. Choose a duet partner, leave the deck on automatic to rotate through the other six, or skate solo. Reduced motion disables automatic routines and holds a pose during manual tricks.
 
-**Combos.** Land different tricks and collect cans to link points. Each new link grows the multiplier, up to 2×. Finishing a line adds a bonus. Let the four-second combo window expire to bank the score and save a personal best. Ambient tricks leave the score alone.
+**Tricks.** The book shows the steps for every routine. Thirteen new lines run seven to nine moves each, plus the original Sidewinder and Air mail. Try crossover, toe manual, rocket air, fishbrain grind, flatspin and wallride individually. Selecting a trick takes over from an automatic routine immediately. Click the lead to dance or right-click for the deck.
 
-**Tape.** Playback starts when you press Play on the radio. Beat’s percussion and bass are synthesized on your device. Volume is remembered. Leaving the tab silences the tape.
+**Scoring.** Chain different manual tricks and collect spray cans to build a combo up to a 2× multiplier. Finishing a manual line awards a bonus. After four seconds without another link the score banks and your personal best is saved. Automatic lines are exhibitions.
 
-**Tabs.** Beat follows the focused script-enabled page. “Jump to another tab” sends him around the open pages in order. A background destination holds his place for 45 seconds. Switch to it to see him arrive. His combo and trick progress travel with him. Cursor paths, cans and finished tags stay on the page where they were drawn.
+**Cursor trail and tabs.** Draw a route for your lead to follow after a one-to-eight-second delay (four seconds by default). The trail holds up to 60 pickup cans. Beat follows the focused script-enabled tab. “Jump to another tab” cycles through open pages and holds a background destination for 45 seconds. The line, current step, partner and score can travel between tabs. Cursor paths stay local.
 
-**Keyboard.** Tab to the cassette and press Enter. Use the arrow keys to switch radio tabs and Escape to close. On Beat, Enter or Space starts a dance and Shift+F10 opens the controls. The cassette and Tampermonkey’s “Beat: controls / bring here” command remain accessible when the skater is hidden.
+## Beat FM
 
-## Installation and preview
+The [19-second dial sampler](docs/beat-fm-sampler.mp3) recreates the hooks of Wisteria Underpass, Kerosene Laces, Peach Soda Static and Exit Through the Moonroof from the release’s note and synthesizer schedules.
 
-Open the install link above and confirm Tampermonkey’s update dialog. If you installed 1.1.1 by pasting it, update that same entry to keep its saved mode, size and visibility. The script uses Tampermonkey’s native update and download URLs for future releases.
+Choose a track under **Radio** and press **Play radio**. Use the previous and next buttons to change tracks, or choose sequence, shuffle or repeat. The station synthesizes its music locally. The volume, selected track and playback order are saved. Leaving the tab silences playback.
 
-For a standalone test, download [Beat-Preview.html](Beat-Preview.html) and open it in a browser. It runs the same engine, graphics, audio and controls offline. Tab-to-tab travel uses extension storage in the installed userscript.
+| Track | Style | BPM |
+|---|---|---:|
+| Curbside Frequency | Big beat | 108 |
+| Wisteria Underpass | Dusty hip-hop | 82 |
+| Kerosene Laces | Jungle | 168 |
+| Chrome Umbrella | Two-step garage | 132 |
+| Pocket Full of Quarters | Arcade electro | 119 |
+| Exit Through the Moonroof | Synthwave | 89 |
+| Peach Soda Static | Future funk | 103 |
+| Boiler Room Broadcast | Acid techno | 137 |
+| Blue Hour at Platform Nine | Liquid halftime | 74 |
+| Chalk Lines in Dub | Dub | 76 |
+| Safety Pin Polaroid | Skate punk | 151 |
+| Paper Lantern Express | Deep house | 124 |
+| Quarterpipe Mirage | Desert trip-hop | 95 |
+| Neon Serration | Grime | 146 |
+| Last Train, First Light | Balearic house | 110 |
 
-Beat runs in top-level HTTP and HTTPS pages where the browser permits userscripts. Images and sounds are bundled or synthesized locally. The overlay handles its own buttons and Beat’s visible hit area. Turning off **Clickable skater** allows page clicks to pass through the character.
+## Setup and installation
 
-## Build and verify
+Open the install link at the top and confirm the update in Tampermonkey. Update the same script entry to retain previous settings and personal bests. Future versions use the native update URL. The script runs in top-level HTTP and HTTPS pages where userscripts are permitted. Its skater art, UI and music are self-contained.
 
-Run `node build.cjs` to rebuild the installable script, update metadata and standalone preview. Run `npm ci` and `npm test` for the deterministic simulation, tab-coordinator, deck and release tests. The integration suite runs the packaged script with a DOM, native canvas/PNG decoder and simulated userscript grants.
+Under **Setup** you can change speed, size, ground clearance, paint color, effects and motion. Beat’s Classic and Remix skins remain available. Other leads have their own sheets. Turn off **Clickable skater** to let page clicks pass through the lead.
 
-Beat and Jet Set Radio belong to SEGA. The original Classic sprites are by xugggys. [Artwork and credits](assets/README.md) · [Sprite gallery](https://github.com/slllky/tampermonkey-art/tree/main/review/beat) · [Browser Companions](../README.md)
+For a standalone preview, download [Beat-Preview.html](Beat-Preview.html) and open it in a browser. The preview uses the release engine, crew, soundtrack and deck. Cross-tab travel uses userscript storage in the installed version.
+
+Tab to the cassette and press Enter. Use the arrow keys to switch tabs and Escape to close. Enter or Space on the lead starts a dance, and Shift+F10 opens the controls. The cassette and Tampermonkey’s **Beat: controls / bring here** command stay available when the skater is hidden.
+
+Run `node build.cjs` to rebuild the script, update metadata and preview. Run `npm ci` and `npm test` for the engine, soundtrack, tab, deck, native-rendering and packaged integration tests.
+
+[Sprite sheets and credits](assets/README.md) · [Public art gallery](https://github.com/slllky/tampermonkey-art/tree/main/review/beat) · [Browser Companions](../README.md)

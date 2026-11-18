@@ -57,7 +57,7 @@ function fixture(initial = {}, preview = false) {
 test('installed bundle keeps v1 preferences, brings Beat back, plays and banks tricks, and cleans up',async () => {
   const prefs='beat-skater-v1:settings';
   const f = fixture({[prefs]:{mode:'follow',scale:2,hidden:true}});
-  await f.ready; assert.equal(f.images.length,3); assert.equal(f.frames.size,0);
+  await f.ready; assert.equal(f.images.length,9); assert.equal(f.frames.size,0);
   f.q('.bt-dial').click(); assert.equal(f.q('.bt-deck').hidden,false);
   assert.equal(f.q('#bt-control-scale').value,'2'); assert.equal(f.q('[data-field="delay"]').hidden,false);
   f.menus.get('Beat: controls / bring here')(); f.pump(35);
@@ -81,7 +81,7 @@ test('offline preview uses the actual userscript deck and embedded renderer with
   const volume=f.q('#bt-volume'); volume.value='61'; volume.dispatchEvent(new f.Event('input'));
   assert.equal(f.storage.get('preview/beat-skater-v1:volume-v2'),'0.61');
   f.q('.bt-transport').click(); await new Promise(resolve => setImmediate(resolve));
-  assert.equal(f.q('.bt-transport').getAttribute('aria-label'),'Play breakbeat');
+  assert.equal(f.q('.bt-transport').getAttribute('aria-label'),'Play radio');
   assert.match(f.q('[role="status"]').textContent,/audio is unavailable/i);
   f.q('.bt-hop').click();
   assert.match(f.q('[role="status"]').textContent,/another webpage/i);
@@ -95,10 +95,37 @@ test('offline preview uses the actual userscript deck and embedded renderer with
 test('public update header preserves Beat’s install identity and universal scope',() => {
   const header=read('Beat-Browser-Skater.meta.js');
   assert.ok(code.startsWith(header)); assert.match(header,/@name\s+Beat — Browser Skater/);
-  assert.match(header,/@namespace\s+aseerr-beat-browser-skater/); assert.match(header,/@version\s+2\.0\.0/);
+  assert.match(header,/@namespace\s+aseerr-beat-browser-skater/); assert.match(header,/@version\s+3\.0\.0/);
   assert.match(header,/@match\s+http:\/\/\*\/\*/); assert.match(header,/@match\s+https:\/\/\*\/\*/);
   for (const [tag,extension] of [['updateURL','meta'],['downloadURL','user']]) {
     assert.ok(header.includes(tag)); assert.ok(header.includes('main/companions/beat/Beat-Browser-Skater.'+extension+'.js'));
   }
   assert.doesNotMatch(header,/@(?:exclude|connect|require|resource)\b|GM_xmlhttpRequest/);
+});
+test('installed deck changes crews, performs autonomous duets and recalls the selected station without pressing play',async () => {
+  const f=fixture(); await f.ready; f.pump(30);
+  f.q('.bt-dial').click();
+  const rider=f.q('input[value="yoyo"]'); rider.checked=true; rider.dispatchEvent(new f.Event('change'));
+  const partner=f.q('#bt-control-partner');
+  partner.querySelector('option[value="zero"]').selected=true; partner.dispatchEvent(new f.Event('change'));
+  f.pump(175);
+  assert.match(f.q('.bt-cast').textContent,/free skate.*yo-yo.*zero beat/i);
+  assert.equal(f.q('.bt-live').hidden,false);
+  assert.match(f.q('.beat-hit').getAttribute('aria-label'),/Yo-Yo/);
+  assert.equal(f.storage.get('beat-skater-v1:best-v2'),undefined);
+  f.q('#bt-tab-station').click();
+  const track=f.q('#bt-track'); assert.equal(track.options.length,15);
+  track.querySelector('option[value="wisteria"]').selected=true; track.dispatchEvent(new f.Event('change'));
+  assert.equal(f.storage.get('beat-skater-v1:track-v3'),'wisteria'); assert.equal(f.q('.bt-track-title').textContent,'Wisteria Underpass');
+  f.q('[data-step="1"]').click(); assert.equal(f.q('.bt-track-title').textContent,'Kerosene Laces');
+  const order=f.q('#bt-order'); order.querySelector('option[value="shuffle"]').selected=true; order.dispatchEvent(new f.Event('change'));
+  assert.equal(f.storage.get('beat-skater-v1:order-v3'),'shuffle');
+  assert.equal(f.q('.bt-transport').getAttribute('aria-label'),'Play radio');
+  f.remote('beat-skater-v1:track-v3','umbrella'); assert.equal(f.q('.bt-track-title').textContent,'Chrome Umbrella');
+  assert.equal(f.storage.get('beat-skater-v1:settings').partner,'zero');
+  f.window.dispatchEvent(new f.Event('pagehide'));
+  const fresh=fixture(Object.fromEntries(f.storage)); await fresh.ready;
+  assert.equal(fresh.q('.bt-track-title').textContent,'Chrome Umbrella'); assert.equal(fresh.q('#bt-order').value,'shuffle');
+  assert.match(fresh.q('.beat-hit').getAttribute('aria-label'),/Yo-Yo/); assert.equal(fresh.q('.bt-transport').getAttribute('aria-label'),'Play radio');
+  fresh.window.dispatchEvent(new fresh.Event('pagehide'));
 });

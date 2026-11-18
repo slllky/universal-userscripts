@@ -135,3 +135,68 @@ test('stop and rapid retuning during pending resume cannot resurrect an old stat
   assert.deepEqual(h.contexts.map(ctx => ctx.closes), [1, 1]);
   assert.equal(h.contexts[0].sources.length, 0);
 });
+
+test('15 original scores play from first downbeat to finale with distinct hooks and finite notes', async () => {
+  assert.equal(BeatAudio.tracks.length,15);
+  const hooks = new Set(), styles = new Set(BeatAudio.tracks.map(track => track.genre));
+  assert.equal(styles.size,15);
+  assert.equal(new Set(BeatAudio.tracks.map(track => track.id)).size,15);
+  for (const track of BeatAudio.tracks) {
+    assert.ok(track.bars >= 20 && track.bars <= 28);
+    const h = hardware(), radio = BeatAudio.create(h.win);
+    radio.select(track.id); radio.setOrder('loop');
+    assert.equal(h.contexts.length,0);
+    assert.equal(await radio.toggle(),true);
+    const ctx = h.contexts[0];
+    const bar = 60 / track.bpm * 4, duration = bar * track.bars;
+    // Poll below the lookahead interval so no notes are skipped.
+    for (let t = .09; t < duration; t += .09) h.tick(t);
+    const melodic = ctx.sources.filter(node => {
+      const events = node.frequency?.events;
+      return events?.length === 1;
+    });
+    const signature = start => melodic
+      .filter(note => note.at >= start * bar && note.at < (start + 2) * bar)
+      .map(note => [note.type, Math.round(note.frequency.events[0][1]), Math.round((note.at / bar - start) * 16)])
+      .join('/');
+    assert.notEqual(signature(4),signature(8),track.title + ' verse and hook differ');
+    hooks.add(signature(8));
+    assert.ok(ctx.sources.length > track.bars * 10,track.title + ' sustained arrangement');
+    assert.ok(ctx.sources.every(node => Number.isFinite(node.at) && Number.isFinite(node.until) && node.until > node.at));
+    for (const note of melodic) assert.ok(Number.isFinite(note.frequency.events[0][1]));
+    radio.stop();
+    assert.ok(!ctx.nodes.some(node => node.connected),track.title + ' cleanup');
+  }
+  assert.equal(hooks.size,15);
+});
+
+test('silent track choices, ordered navigation, shuffle cycle, and automatic tempo handoff', async () => {
+  const h = hardware(), changes = [];
+  const radio = BeatAudio.create(h.win,{onTrack:track => changes.push(track.id)});
+  assert.equal(radio.current().id,'curbside');
+  assert.equal(radio.previous().id,'firstlight');
+  assert.equal(radio.next().id,'curbside');
+  assert.equal(radio.select('missing').id,'curbside');
+  assert.equal(radio.select('kerosene').title,'Kerosene Laces');
+  assert.equal(radio.previous().id,'wisteria');
+  assert.equal(radio.setOrder('shuffle'),'shuffle');
+  const pass = [radio.current().id];
+  for (let i = 1; i < 15; i++) pass.push(radio.next().id);
+  assert.equal(new Set(pass).size,15,'shuffle plays the entire catalogue before recycling');
+  assert.equal(radio.previous().id,pass[13]);
+  assert.equal(h.contexts.length,0,'browsing the catalogue never starts sound');
+  radio.setOrder('sequence'); radio.select('curbside');
+  assert.equal(await radio.toggle(),true);
+  const first = radio.current(), duration = first.bars * 4 * 60 / first.bpm;
+  h.tick(duration + .3); // A timer stall also counts bars across the track boundary.
+  assert.equal(radio.current().id,'wisteria');
+  assert.equal(changes.at(-1),'wisteria');
+  const second = radio.current();
+  radio.setOrder('loop');
+  h.tick(duration + second.bars * 4 * 60 / second.bpm + 1);
+  assert.equal(radio.current().id,'wisteria');
+  const count = h.contexts.length;
+  radio.select('chalk'); h.tick(h.contexts[0].currentTime + .06);
+  assert.equal(h.contexts.length,count,'manual tuning keeps one AudioContext');
+  radio.stop();
+});
