@@ -18,7 +18,7 @@ Aseerr / slllky’s collection of **13 Tampermonkey scripts**, organized by what
 | Browser Companions | [Adventure Time — Ooo Crew](companions/ooo-crew/) | 1.2.0 | [.user.js](companions/ooo-crew/Adventure-Time-Ooo-Crew.user.js) |
 | Browser Companions | [Beat — Browser Skater](companions/beat/) | 1.1.1 | [.user.js](companions/beat/Beat-Browser-Skater.user.js) |
 | Browser Companions | [Jake — Stretch Walker](companions/jake/) | 2.0.1 | [.user.js](companions/jake/Jake-Stretch-Walker.user.js) |
-| Browser Companions | [Rengoku — Bottom Patrol](companions/rengoku/) | 1.1.0 | [.user.js](companions/rengoku/Rengoku-Bottom-Patrol.user.js) |
+| Browser Companions | [Rengoku — Bottom Patrol](companions/rengoku/) | 2.0.0 | [.user.js](companions/rengoku/Rengoku-Bottom-Patrol.user.js) |
 | Browser Companions | [RIFT — Cozy Companion](companions/rift/) | 1.2.0 | [.user.js](companions/rift/RIFT-Cozy-Companion.user.js) |
 | Custom Cursors | [Car Drift Cursor](cursors/car-drift/) | 1.0.1 | [.user.js](cursors/car-drift/Car-Drift-Cursor.user.js) |
 | Custom Cursors | [Sword Cursor - Three Spin Blades](cursors/sword/) | 1.0.0 | [.user.js](cursors/sword/Sword-Cursor.user.js) |
@@ -48,7 +48,7 @@ For Pokémon, export your save before updating and replace the code in the exist
 
 These are general-purpose web customizations and games. Workplace-specific scripts are excluded. Universal page matching does not guarantee compatibility with every website.
 
-The original 11 userscript source files are preserved byte-for-byte from the supplied collection. RIFT and Adventure Time — Ooo Crew are added as separate universal companions; the original Jake script remains unchanged. Namespaces, author credits, and bundled license notices are retained. No blanket license is asserted over third-party artwork or characters.
+The import commit preserves all 11 original source files. The current Rengoku release adds a new patrol engine, bundled art, and a field manual. RIFT and Adventure Time — Ooo Crew are added as separate universal companions; the original Jake script remains unchanged. Namespaces, author credits, and bundled license notices are retained. No blanket license is asserted over third-party artwork or characters.
 
 The [manifest](manifest.json) records the current version and SHA-256 checksum of every script. The original collection’s checksums matched and all 11 JavaScript syntax checks passed during its import. RIFT 1.2.0 passes syntax and universal-domain checks; its 35 automated checks cover saves, game components, animation, view templates, illustrated rendering, pigment colors, and temporary wardrobe try-ons. See [RIFT’s validation notes](companions/rift/TESTING.md) for the live-browser checks that remain unverified. Browser gameplay and site compatibility were not tested as part of this upload.
 

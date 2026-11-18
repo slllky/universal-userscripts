@@ -1,25 +1,26 @@
 # Rengoku — Bottom Patrol
 
-Version: **1.1.0**
+**2.0.0** turns the bottom of an ordinary webpage into a small night patrol. Rengoku walks, breaks into a run, vaults, braces, and fights eight demons. Each encounter has four hits, with different tells and reactions depending on the opponent.
 
-Rengoku patrols, swipes at your cursor, performs click actions and defeats demons in four hits.
+[Install or update in Tampermonkey](https://raw.githubusercontent.com/slllky/universal-userscripts/main/companions/rengoku/Rengoku-Bottom-Patrol.user.js) · [Download the offline preview](Patrol-Preview.html) · [View the sprite sheets](https://github.com/slllky/tampermonkey-art/tree/main/review/rengoku)
 
-## Installation
+![Rengoku in motion](docs/patrol-motion.gif)
 
-Open [Rengoku-Bottom-Patrol.user.js](Rengoku-Bottom-Patrol.user.js), select Raw in GitHub, and confirm installation in Tampermonkey. Alternatively paste the full file into a new userscript and save. Disable older duplicate installations.
+Open the install link, choose **Update** if you have Bottom Patrol already, and reload a regular HTTP or HTTPS page. An existing hidden patrol stays hidden until you turn **Show patrol** back on. The flame crest remains available.
 
-## Scope and permissions
+| Where | What you can do |
+|---|---|
+| Lower-left flame crest → **Patrol** | Set size, pace, height above the bottom, encounter frequency, flame effects, motion, and cursor interactions. The crest sits above the Ooo Crew launcher. |
+| **Dojo → Encounter** | Pick a demon or let the patrol surprise you. Choose **Manual only** under Patrol to summon all encounters yourself. |
+| **Dojo → Practice** | Try nine individual movements and three chained drills: Crescent vault, Cinder reversal, and Blazing relay. |
+| On the page | Move your cursor near Rengoku to draw a swipe, click him for an action, or right-click him to summon a demon. Turn off interactions for click-through browsing. |
 
-Runs on ordinary HTTP and HTTPS pages where your browser permits userscripts. Browser settings pages and some restricted pages are not supported.
+The cast includes Pink Demon, Lantern Eye, Furnace Brute, Dusk Stalker, Silk Moth, Temple Bell, Foxfire, and Basalt Oni. Watch the moth rise before a dive, the fox retreat before its double feint, and the bell rock back before its pulse.
 
-Requested userscript grants: `GM_getResourceURL`, `GM_xmlhttpRequest`, `GM_getValue`, `GM_setValue`, `GM_addValueChangeListener`, `GM_registerMenuCommand`.
+The focused tab runs the patrol. It saves your settings across websites and passes its current encounter to the next focused tab. Gentle motion follows your device preference by default. It keeps encounters manual and uses held poses. All sprites ship inside the userscript. Tampermonkey can check the repository for later releases through its normal update controls.
 
-This script depends on externally hosted artwork. Those hosts may change or become unavailable. Original resource URLs and credits are preserved.
+## Build and verification
 
-## Credits and verification
+From this folder, run `node build.cjs` to rebuild the userscript and offline preview from the bundled art and source. Run `npm ci` and `npm test` for the development checks. See [asset credits](assets/README.md).
 
-Original author metadata, namespaces, credits and bundled license notices are retained. Inclusion does not grant additional rights to third-party characters or artwork. JavaScript syntax checked; this archive is not a claim of browser testing on every website.
-
-## Browse the collection
-
-[Category index](../README.md) · [All userscripts](../../README.md)
+[Browser companions](../README.md) · [Userscript collection](../../README.md)

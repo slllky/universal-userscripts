@@ -22,10 +22,10 @@
   },
   {
     "name": "Rengoku — Bottom Patrol",
-    "version": "1.1.0",
+    "version": "2.0.0",
     "category": "companions",
     "path": "companions/rengoku/Rengoku-Bottom-Patrol.user.js",
-    "sha256": "d18128ae5b85f2304c310acd98c53e735b68e8c04365c5e7025dd986eaa99f69"
+    "sha256": "98358fa67706c470be7c058ebc699f94593cdefca43c1bda8f0e75c17b271c43"
   },
   {
     "name": "RIFT — Cozy Companion",
