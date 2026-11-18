@@ -1,6 +1,29 @@
 /* Canvas presentation shared by the userscript and the rendering checks. */
 const OooRender = (() => {
   'use strict';
+  function fit(world,x,y,scale,angle,flip,localBounds) {
+    const [left,top,right,bottom]=localBounds, cos=Math.cos(angle),sin=Math.sin(angle),sign=flip?-1:1;
+    const corners=[[left,top],[right,top],[right,bottom],[left,bottom]].map(([a,b])=>[a*sign*cos-b*sin,a*sign*sin+b*cos]);
+    const xs=corners.map(p=>p[0]),ys=corners.map(p=>p[1]);
+    const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+    const pad=Math.min(2,world.width/4,world.height/4);
+    scale=Math.min(scale,(world.width-pad*2)/(maxX-minX||1),(world.height-pad*2)/(maxY-minY||1));
+    x=OooCore.clamp(x,pad-minX*scale,world.width-pad-maxX*scale);
+    y=OooCore.clamp(y,pad-minY*scale,world.height-pad-maxY*scale);
+    // Round the anchor before containment, not after: fractional zoom must not push ink outside.
+    x=OooCore.clamp(Math.round(x),pad-minX*scale,world.width-pad-maxX*scale);
+    y=OooCore.clamp(Math.round(y),pad-minY*scale,world.height-pad-maxY*scale);
+    return {x,y,scale,angle,flip,bounds:[x+minX*scale,y+minY*scale,x+maxX*scale,y+maxY*scale],width:(maxX-minX)*scale,height:(maxY-minY)*scale};
+  }
+  function stretchPose(world,a) {
+    const s=world.scale,t=a.elapsed/a.duration;
+    const envelope=world.gentle?.35:Math.sin(Math.max(0,Math.min(1,t))*Math.PI)**.7;
+    const target=a.reach||{x:a.x,y:world.floor-180*s};
+    const dx=target.x-a.x,dy=world.floor-target.y;
+    const length=58+Math.max(0,Math.hypot(dx,dy)/s-58)*envelope;
+    const angle=Math.atan2(dx,dy)*envelope;
+    return {...fit(world,a.x,world.floor,s,angle,false,[-29,-length,29,0]),length};
+  }
   function pose(world, actor, frames) {
     const def=OooCore.cast[actor.id], s=world.scale;
     let art=actor.id==='marceline'&&world.settings.marcelineArt==='archive'?'archive':actor.id;
@@ -8,7 +31,7 @@ const OooRender = (() => {
     let action={ run:'run', walk:'walk', music:'music', dance:'dance', cheer:'cheer', eat:'cheer', magic:'cheer', drag:'cheer', drop:'cheer' }[state]||'idle';
     if(!frames.animations[art+'.'+action])action=state==='dance'?'cheer':'idle';
     const list=frames.animations[art+'.'+action]||frames.animations[art+'.idle'];
-    const rate={walk:9,run:12,dance:7,music:7,idle:3.5}[action]||6;
+    const rate=actor.id==='batbug'?9:({walk:9,run:12,dance:7,music:7,idle:3.5}[action]||6);
     const index=world.gentle?0:(actor.id==='finn'&&action==='idle'?1:Math.floor((actor.elapsed+actor.seed)*rate)%list.length);
     const frame=list[Math.min(index,list.length-1)];
     let y=world.floor-(def.float||0)*s;
@@ -24,10 +47,13 @@ const OooRender = (() => {
       const p=Math.min(1,actor.elapsed/actor.duration);
       y=world.gentle?world.floor:actor.dropFrom+(world.floor-actor.dropFrom)*p*p;
     }
-    return {x:actor.x,y,frame,flip:actor.direction!==def.facing,scale:s,width:Math.min(65*s,world.width),height:def.height*s,art,action};
+    const b=frames.bounds?.[frame]||[0,0,128,128];
+    const angle=!world.gentle&&state==='dance'?Math.sin(actor.elapsed*5)*.08:0;
+    const geometry=state==='stretch'?stretchPose(world,actor):fit(world,actor.x,y,s,angle,actor.direction!==def.facing,[b[0]-64,b[1]-120,b[2]-64,b[3]-120]);
+    return {...geometry,frame,art,action};
   }
   function sprite(ctx,atlas,frames,frame,x,y,scale=1,flip=false,angle=0) {
-    ctx.save();ctx.translate(Math.round(x),Math.round(y));ctx.rotate(angle);ctx.scale(flip?-scale:scale,scale);
+    ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(flip?-scale:scale,scale);
     const cell=frames.cell;
     ctx.drawImage(atlas,(frame%frames.columns)*cell,Math.floor(frame/frames.columns)*cell,cell,cell,-64,-120,128,128);ctx.restore();
   }
@@ -46,6 +72,8 @@ const OooRender = (() => {
       rect('#304a54',-4,-24,8,8);rect('#304a54',-8,-16,16,8);rect('#304a54',-11,-8,22,9);rect('#bde9dc',-2,-22,4,8);rect('#9ac6ba',-6,-14,12,7);rect('#d081ad',-9,-6,18,5);rect('#ffe6ef',-7,-5,3,3);
     }else if(kind==='fire'){
       rect('#51473d',-16,0,32,5);rect('#947250',-12,5,24,3);rect('#ac5336',-10,-12,20,12);rect('#ec9b42',-7,-22,14,21);rect('#f1c766',-3,-30,7,27);rect('#fff0a0',-3,-12,6,10);
+    }else if(kind==='book'){
+      rect('#3c543c',-14,-18,28,19);rect('#d5c19a',-12,-16,11,14);rect('#f4e7c2',1,-16,11,14);rect('#8a815f',-8,-12,6,1);rect('#8a815f',3,-12,6,1);rect('#8a815f',3,-8,6,1);rect('#cf806b',0,-18,2,21);
     }else if(kind==='flag'){
       rect('#5b4c37',0,-40,3,40);rect(color,3,-40,20,12);rect(color,3,-28,12,5);
     }
@@ -62,17 +90,11 @@ const OooRender = (() => {
     ctx.fillStyle='#fff8e6';ctx.beginPath();ctx.moveTo(x-4,by+h-1);ctx.lineTo(x,by+h+5);ctx.lineTo(x+5,by+h-1);ctx.fill();
     ctx.fillStyle='#30443b';lines.forEach((l,i)=>ctx.fillText(l,bx+10,by+19+i*17));ctx.restore();
   }
-  function stretch(ctx,world,a,jake) {
-    const s=world.scale,t=a.elapsed/a.duration;
-    const envelope=world.gentle?.35:Math.sin(Math.min(1,t)*Math.PI)**.7;
-    const target=a.reach||{x:a.x,y:world.floor-180*s};
-    const dx=target.x-a.x,dy=world.floor-target.y;
-    const length=58*s+Math.max(0,Math.hypot(dx,dy)-58*s)*envelope;
-    const angle=Math.atan2(dx,dy)*envelope;
-    ctx.save();ctx.translate(a.x,world.floor);ctx.rotate(angle);
-    ctx.drawImage(jake,0,24,32,8,-29*s,-14.5*s,58*s,14.5*s);
-    ctx.drawImage(jake,0,20,32,4,-29*s,-length+36*s,58*s,Math.max(7.5*s,length-50.5*s));
-    ctx.drawImage(jake,0,0,32,20,-29*s,-length,58*s,36*s);ctx.restore();
+  function stretch(ctx,p,jake) {
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);ctx.scale(p.scale,p.scale);
+    ctx.drawImage(jake,0,24,32,8,-29,-14.5,58,14.5);
+    ctx.drawImage(jake,0,20,32,4,-29,-p.length+36,58,Math.max(7.5,p.length-50.5));
+    ctx.drawImage(jake,0,0,32,20,-29,-p.length,58,36);ctx.restore();
   }
   function draw(ctx,world,assets) {
     ctx.clearRect(0,0,world.width,world.height);if(!world.settings.enabled)return;
@@ -91,8 +113,8 @@ const OooRender = (() => {
     for(const a of world.actors){
       const p=pose(world,a,assets.frames);poses.push([a,p]);
       ctx.save();ctx.globalAlpha=.12;ctx.fillStyle='#253f37';ctx.beginPath();ctx.ellipse(a.x,world.floor+1,19*scale,3*scale,0,0,Math.PI*2);ctx.fill();ctx.restore();
-      if(a.state==='stretch')stretch(ctx,world,a,assets.jake);
-      else sprite(ctx,assets.atlas,assets.frames,p.frame,p.x,p.y,p.scale,p.flip,(!world.gentle&&a.state==='dance'?Math.sin(a.elapsed*5)*.08:0));
+      if(a.state==='stretch')stretch(ctx,p,assets.jake);
+      else sprite(ctx,assets.atlas,assets.frames,p.frame,p.x,p.y,p.scale,p.flip,p.angle);
       if(a.state==='music'){
         for(let i=0;i<(world.gentle?1:4);i++){
           const phase=world.gentle?.35:(a.elapsed*.45+i*.25)%1;
@@ -106,6 +128,7 @@ const OooRender = (() => {
         }
       }
       if(a.state==='eat')icon(ctx,'snack',p.x+24*scale,p.y-15*scale,scale*.8);
+      if(a.state==='read')icon(ctx,'book',p.x+17*scale,p.y-10*scale,scale*.8);
     }
     if(scene?.phase==='play'){
       if(scene.id==='heroes'&&scene.elapsed>1&&scene.elapsed<3)icon(ctx,'star',scene.center,world.floor-94*scale,scale*.9);

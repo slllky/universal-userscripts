@@ -6,8 +6,8 @@ const read=name=>fs.readFileSync(path.join(root,name),'utf8');
 const metadata=`// ==UserScript==
 // @name         Adventure Time — Ooo Crew
 // @namespace    aseerr-adventure-time-ooo-crew
-// @version      1.0.0
-// @description  Nine Adventure Time companions, sprite animations, group adventures, draggable friends, snacks, and a customizable Ooo field guide.
+// @version      1.1.0
+// @description  Seventeen Adventure Time companions, sprite animations, group adventures, draggable friends, snacks, and a customizable Ooo field guide.
 // @author       Aseerr / slllky (compilation); sprite credits in companions/ooo-crew/assets/README.md
 // @match        https://*/*
 // @match        http://*/*

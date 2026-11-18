@@ -22,7 +22,7 @@
         256
       ],
       "used": true,
-      "notes": "Bubblegum and Flame Princess poses; ParrishBroadnax identified in supplied URL."
+      "notes": "Bubblegum poses; ParrishBroadnax identified in supplied URL. Flame Princess now uses source 10."
     },
     {
       "id": 3,
@@ -46,7 +46,17 @@
         546
       ],
       "used": true,
-      "notes": "Banana Guard and Candy Corn; source artist not identified in supplied sheet."
+      "notes": "Banana Guard and Candy Corn; source artist not identified in supplied sheet.",
+      "bundledSource": {
+        "path": "source-sheets/candy.png",
+        "url": "https://i.pinimg.com/originals/7a/44/51/7a4451ad0c43eb0fdf3f880a094e1d6a.jpg",
+        "format": "PNG",
+        "dimensions": [
+          510,
+          546
+        ],
+        "sha256": "5209857e68d3341c0089e4a2368e534450944f64890cf3aab6f37be3ab81fb9f"
+      }
     },
     {
       "id": 5,
@@ -70,7 +80,17 @@
         416
       ],
       "used": true,
-      "notes": "Lumpy Space Princess; source artist not identified in supplied sheet."
+      "notes": "Lumpy Space Princess; source artist not identified in supplied sheet.",
+      "bundledSource": {
+        "path": "source-sheets/lsp.png",
+        "url": "https://i.pinimg.com/originals/07/74/be/0774bec7f45de09ae9f0143b664f552c.jpg",
+        "format": "PNG",
+        "dimensions": [
+          340,
+          416
+        ],
+        "sha256": "6077fbc83f0660a7b75ec1170a43ae0bfef0d6e43f1f27dcc59529a6b70bc41d"
+      }
     },
     {
       "id": 7,
@@ -94,7 +114,17 @@
         568
       ],
       "used": true,
-      "notes": "Finn; source artist not identified in supplied sheet."
+      "notes": "Finn; source artist not identified in supplied sheet.",
+      "bundledSource": {
+        "path": "source-sheets/finn.png",
+        "url": "https://i.pinimg.com/originals/5c/61/ea/5c61ead0e86dc97792643dfe36dfb017.jpg",
+        "format": "PNG",
+        "dimensions": [
+          262,
+          568
+        ],
+        "sha256": "5c8b271e0ec8d5bb7ea346d90935b2a7a341b2a9785d819bbc443d402bc87fda"
+      }
     },
     {
       "id": "existing-jake",
@@ -104,10 +134,64 @@
       "sha256": "00c787206cd76b3b0b0270317859865df617e77f26f489d4b4238f9084b31072",
       "used": true,
       "notes": "Original palette/RLE atlas, preserved separately for head/body/feet stretch rendering."
+    },
+    {
+      "id": 9,
+      "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9c8a68ea-00bc-4983-949d-d33d4770eea8/d5tuyij-856c2db8-e7e4-482c-b0ef-b8a3c31e9dc8.png/v1/fill/w_336,h_434,q_80,strp/adventure_time_rpg_fionna_and_cake_by_tebited15_d5tuyij-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NDM0IiwicGF0aCI6Ii9mLzljOGE2OGVhLTAwYmMtNDk4My05NDlkLWQzM2Q0NzcwZWVhOC9kNXR1eWlqLTg1NmMyZGI4LWU3ZTQtNDgyYy1iMGVmLWI4YTNjMzFlOWRjOC5wbmciLCJ3aWR0aCI6Ijw9MzM2In1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.GvVTKD_GzXuLigNo4pzAD7Ui_qSMbz5VejAe2sYsAbk",
+      "used": true,
+      "notes": "Tebited15 Fionna and Cake. Single regular palette only.",
+      "bundledSource": {
+        "path": "source-sheets/fionna-cake.png",
+        "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/9c8a68ea-00bc-4983-949d-d33d4770eea8/d5tuyij-856c2db8-e7e4-482c-b0ef-b8a3c31e9dc8.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NDM0IiwicGF0aCI6Ii9mLzljOGE2OGVhLTAwYmMtNDk4My05NDlkLWQzM2Q0NzcwZWVhOC9kNXR1eWlqLTg1NmMyZGI4LWU3ZTQtNDgyYy1iMGVmLWI4YTNjMzFlOWRjOC5wbmciLCJ3aWR0aCI6Ijw9MzM2In1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.GvVTKD_GzXuLigNo4pzAD7Ui_qSMbz5VejAe2sYsAbk",
+        "format": "PNG",
+        "dimensions": [
+          336,
+          434
+        ],
+        "sha256": "dfaecff52c71477a66985c1d84df0c53d2f86f23dc7f1b831ba3df85c3a956e1"
+      }
+    },
+    {
+      "id": 10,
+      "url": "https://i.pinimg.com/736x/d9/95/30/d995306ec2f67b4d3c6a7a7b95253046.jpg",
+      "used": true,
+      "notes": "Wildberry, Slime, Hot Dog, Muscle, Turtle, and Flame Princess. Other figures not included.",
+      "bundledSource": {
+        "path": "source-sheets/princesses.png",
+        "url": "https://i.pinimg.com/originals/d9/95/30/d995306ec2f67b4d3c6a7a7b95253046.jpg",
+        "format": "PNG",
+        "dimensions": [
+          237,
+          623
+        ],
+        "sha256": "6f6fd337180f4875749167f81ba2ba21cc3d706aa8d6a164ea9cbf7008421cab"
+      }
+    },
+    {
+      "id": 11,
+      "url": "https://www.nicepng.com/png/full/138-1380850_bat-bug-adventure-time-bats.png",
+      "used": true,
+      "notes": "Bat Bug wing cycle. Supplied transparent PNG; original artist unidentified.",
+      "bundledSource": {
+        "path": "source-sheets/bat-bug.png",
+        "url": "https://www.nicepng.com/png/full/138-1380850_bat-bug-adventure-time-bats.png",
+        "format": "PNG",
+        "dimensions": [
+          661,
+          392
+        ],
+        "sha256": "0a002750043a6f264784a196d02b9ea3c479b15993981453e57418e9cc35d7e7"
+      }
     }
   ],
   "bundled": {
     "jake.png": "360324b67dde4b20edf98bff9060c135edda689bb278c67fa06a32a5bc5201a0",
-    "crew.png": "1a98f51870ec6228deb2be3826f31e18b01feab0880e06403e445851cbd8b51b"
+    "crew.png": "97b97a0f1c34154d31a04c6f5bf0276d0b1c3fe845ce61a0a1389a2d908a0eef",
+    "source-sheets/finn.png": "5c8b271e0ec8d5bb7ea346d90935b2a7a341b2a9785d819bbc443d402bc87fda",
+    "source-sheets/lsp.png": "6077fbc83f0660a7b75ec1170a43ae0bfef0d6e43f1f27dcc59529a6b70bc41d",
+    "source-sheets/princesses.png": "6f6fd337180f4875749167f81ba2ba21cc3d706aa8d6a164ea9cbf7008421cab",
+    "source-sheets/fionna-cake.png": "dfaecff52c71477a66985c1d84df0c53d2f86f23dc7f1b831ba3df85c3a956e1",
+    "source-sheets/candy.png": "5209857e68d3341c0089e4a2368e534450944f64890cf3aab6f37be3ab81fb9f",
+    "source-sheets/bat-bug.png": "0a002750043a6f264784a196d02b9ea3c479b15993981453e57418e9cc35d7e7"
   }
 }

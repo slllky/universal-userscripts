@@ -1,14 +1,24 @@
 # Adventure Time — Ooo Crew
 
-**Version 1.0.0** · A universal, self-contained companion crew for Tampermonkey.
+**Version 1.1.0** · A universal, self-contained companion crew for Tampermonkey.
 
-Finn and Jake celebrate together. Marceline plays a tiny concert. Gunter makes off with Jake’s snack. Nine selectable companions share the bottom of your browser, with real sprite frames, individual activities, coordinated scenes, and a small illustrated field guide.
+Finn and Jake celebrate together. Marceline plays a tiny concert. Gunter makes off with Jake’s snack. Seventeen selectable companions share the bottom of your browser, with real sprite frames, individual activities, coordinated scenes, and a small illustrated field guide.
 
-The default crew is **Finn, Jake, Marceline, Lumpy Space Princess, and Gunter**. Invite **Princess Bubblegum, Flame Princess, Banana Guard, and Candy Corn** from the guide. Everyone is available immediately.
+The default crew is **Finn, Jake, Marceline, Lumpy Space Princess, and Gunter**. Invite **Princess Bubblegum, Flame Princess, Banana Guard, and Candy Corn** from the guide. Everyone is available immediately. Version 1.1.0 also adds **Fionna, Cake, Bat Bug, Wildberry Princess, Slime Princess, Hot Dog Princess, Muscle Princess, and Turtle Princess**.
 
 ![Bundled sprites and a tiny concert](docs/crew-preview.png)
 
 *Actual canvas render of the crew; not a browser screenshot.*
+
+## What changed in 1.1.0
+
+LSP’s stray black blob was a neighboring sheet shadow. It is removed before packing frames. Finn, LSP, and the Candy Kingdom sprites now come from lossless originals with exact background removal; Finn’s white hat and green backpack keep their original colors. Sprite bounds now account for actual opaque pixels, rotation, dragging, stretching, and viewport dimensions rather than nominal character heights.
+
+![Finn and LSP before and after the sprite fixes](docs/sprite-fixes.png)
+
+Fionna and Cake use consistent palettes and have their own shortcut scene. Bat Bug flaps, wanders in the air, and circles Marceline during a rehearsal. Turtle Princess can take a book break. New presets collect the counterparts and the princesses, and larger parties rotate concert/campfire guests.
+
+To update, replace the code in your **existing Ooo Crew entry** with the new userscript and save, then reload the page. The namespace and save keys are unchanged, so crew preferences and postcards carry over.
 
 ## Install
 
@@ -36,7 +46,7 @@ Want to try it first? Download [Ooo-Crew-Preview.html](Ooo-Crew-Preview.html) an
 
 Ordinary browsing is **click-through by default**. Play mode intercepts clicks only over the character hit targets. Snack/gather placement briefly uses the whole canvas until one click or Esc.
 
-## Six coordinated scenes
+## Eight coordinated scenes
 
 | Scene | Required crew | What happens |
 |---|---|---|
@@ -46,14 +56,16 @@ Ordinary browsing is **click-through by default**. Play mode intercepts clicks o
 | Candy chemistry | Bubblegum + Flame Princess | They gather around a flask for a bubbling, fiery experiment |
 | Lump royalty | LSP + Banana Guard | A tiny royal procession with a very enthusiastic princess |
 | Campfire break | Any two friends | Up to six companions gather around a little fire |
+| Cake’s shortcut | Fionna + Cake | Cake leads a scamper while Fionna follows |
+| After-dark rehearsal | Marceline + Bat Bug | Marceline plays while Bat Bug circles her |
 
 Friends occasionally start scenes on their own. Only one coordinated scene owns the cast at a time. Removing a participant, dragging them, or changing the viewport releases the scene safely. Scenes unavailable to your current crew show which friends to invite.
 
-Jake retains the original walker’s stretch construction: his face and feet stay intact while the middle elongates toward a nearby cursor. Each character also has a manual trick. Eight postcard stamps remember completed scenes, feeding, and picking someone up; they never gate features.
+Jake retains the original walker’s stretch construction: his face and feet stay intact while the middle elongates toward a nearby cursor. Each character also has a manual trick. Ten postcard stamps remember completed scenes, feeding, and picking someone up; they never gate features.
 
 ## Make it yours
 
-- Four crew presets, individual invitations, and any combination of the nine companions.
+- Six crew presets, individual invitations, and any combination of the seventeen companions.
 - Treehouse, Candy Kingdom, and Nightosphere field guide covers.
 - Companion size, walking speed, activity frequency, and distance above the bottom edge.
 - Wandering, spontaneous scenes, and speech bubbles can be switched separately.
@@ -64,9 +76,9 @@ Jake retains the original walker’s stretch construction: his face and feet sta
 
 ## Art and implementation
 
-The userscript embeds **135 frames in 33 animation/pose sets**, plus the original Jake atlas. It makes no runtime asset requests, loads no external libraries or fonts, and reads no webpage text, forms, accounts, or browsing history. Site snoozes store only hostnames locally in the userscript’s settings.
+The userscript embeds **160 frames in 54 animation/pose sets**, plus the original Jake atlas. It makes no runtime asset requests, loads no external libraries or fonts, and reads no webpage text, forms, accounts, or browsing history. Site snoozes store only hostnames locally in the userscript’s settings.
 
-The supplied art varies in detail and resolution. It is harmonized with transparent backgrounds, consistent scale/baselines, nearest-neighbor rendering, common shadows, and coordinated movement. Finn, Jake, Marceline, LSP, and Gunter have multi-frame cycles. Bubblegum, Flame Princess, Banana Guard, and Candy Corn have limited source poses, supplemented with movement and character-specific effects rather than fabricated extra sprite frames. The static Jake transformation collage is a reference, not a usable animation strip.
+The supplied art varies in detail and resolution. It is harmonized with transparent backgrounds, consistent scale/baselines, nearest-neighbor rendering, common shadows, and coordinated movement. Finn, Jake, Marceline, LSP, Gunter, Fionna, Cake, and Bat Bug have multi-frame cycles. The other companions have limited source poses, supplemented with movement and character-specific effects rather than fabricated extra sprite frames. The static Jake transformation collage is a reference, not a usable animation strip.
 
 See [sprite sources and credits](assets/README.md). No blanket license is asserted over Adventure Time characters or third-party artwork.
 

@@ -12,12 +12,22 @@ const OooCore = (() => {
     bubblegum: { name: 'Princess Bubblegum', short: 'Bubblegum', subtitle: 'Science with a candy coating.', color: '#d66e9b', height: 69, speed: 27, facing: -1, lines: ['A perfectly controlled experiment.', 'Probably not radioactive.', 'Data first. Celebrating second.'], trick: 'Candy chemistry' },
     flame: { name: 'Flame Princess', subtitle: 'A little warmth for your world.', color: '#d8803f', height: 64, speed: 33, facing: -1, lines: ['I brought the warm lighting.', 'A tiny, responsible fire.', 'Things are heating up.'], trick: 'Fire flourish' },
     banana: { name: 'Banana Guard', subtitle: 'On patrol. Mostly.', color: '#c7a93f', height: 64, speed: 31, facing: -1, lines: ['Perimeter: banana secured.', 'Was I supposed to be guarding this?', 'Nothing suspicious. Probably.'], trick: 'Royal salute' },
-    corn: { name: 'Candy Corn', subtitle: 'Here for the snacks and vibes.', color: '#c99a4d', height: 45, speed: 25, facing: -1, lines: ['A very sweet situation.', 'I brought moral support.', 'Snack break? Snack break.'], trick: 'Happy hop' }
+    corn: { name: 'Candy Corn', subtitle: 'Here for the snacks and vibes.', color: '#c99a4d', height: 45, speed: 25, facing: -1, lines: ['A very sweet situation.', 'I brought moral support.', 'Snack break? Snack break.'], trick: 'Happy hop' },
+    fionna: { name: 'Fionna', subtitle: 'Big adventures. Bigger hat ears.', color: '#57a7be', height: 66, speed: 54, facing: -1, lines: ['Okay, this is definitely a side quest.', 'Cake. We are taking the scenic route.', 'Adventure is a perfectly good plan.'], trick: 'Hero hop' },
+    cake: { name: 'Cake', subtitle: 'A cat with places to be.', color: '#d2b34b', height: 40, speed: 49, facing: -1, lines: ['I found a shortcut. Probably.', 'That snack looks unattended.', 'Follow the fabulous cat.'], trick: 'Cat wiggle' },
+    wildberry: { name: 'Wildberry Princess', short: 'Wildberry', subtitle: 'A very berry royal visit.', color: '#c15586', height: 48, speed: 27, facing: -1, lines: ['A berry important appearance.', 'The party needed more pink.', 'Royal snack inspection.'], trick: 'Berry bounce' },
+    slime: { name: 'Slime Princess', short: 'Slime', subtitle: 'Tiny crown. Excellent wobble.', color: '#a1ad4c', height: 30, speed: 23, facing: -1, lines: ['Just going with the flow.', 'A royal little wobble.', 'No rush. I am mostly goo.'], trick: 'Royal wobble' },
+    hotdog: { name: 'Hot Dog Princess', short: 'Hot Dog', subtitle: 'The sweetest little sausage.', color: '#b47b42', height: 34, speed: 35, facing: -1, lines: ['The bun stops here.', 'I heard there were snacks.', 'A royal walk around the block.'], trick: 'Happy wiggle' },
+    muscle: { name: 'Muscle Princess', short: 'Muscle', subtitle: 'Heavy lifting. Light browsing.', color: '#63a579', height: 78, speed: 30, facing: -1, lines: ['I can carry the whole party.', 'Strong opinions. Stronger arms.', 'Victory stretch!'], trick: 'Victory bounce' },
+    turtle: { name: 'Turtle Princess', short: 'Turtle', subtitle: 'A quiet chapter between quests.', color: '#94a36a', height: 54, speed: 18, facing: -1, lines: ['Just one more chapter.', 'Every quest needs a reading break.', 'I saved your place.'], trick: 'Book break' },
+    batbug: { name: 'Bat Bug', subtitle: 'A tiny flapping troublemaker.', color: '#497f61', height: 27, speed: 56, facing: -1, float: 65, lines: ['Flap. Flap. Very busy.', 'A small nocturnal detour.', 'The ceiling looked interesting.'], trick: 'Wing wiggle' }
   };
   const presets = {
     friends: ['finn', 'jake', 'marceline', 'lsp', 'gunter'],
     candy: ['finn', 'jake', 'bubblegum', 'flame', 'banana', 'corn'],
     midnight: ['marceline', 'lsp', 'gunter'],
+    counterparts: ['fionna','cake','finn','jake','batbug'],
+    royalty: ['bubblegum','flame','wildberry','slime','hotdog','muscle','turtle'],
     everyone: Object.keys(cast)
   };
   const defaults = { enabled: true, selected: presets.friends, size: 1.1, speed: 1, activity: 1, bottom: 8, theme: 'treehouse', motion: 'system', wander: true, autoScenes: true, chatter: true, sound: false, marcelineArt: 'toon', hiddenSites: [] };
@@ -37,7 +47,9 @@ const OooCore = (() => {
     heist: { title: 'The snack incident', note: 'Gunter borrows a snack. Jake has questions.', needs: ['gunter', 'jake'], duration: 9, color: '#d99553' },
     science: { title: 'Candy chemistry', note: 'Bubblegum and Flame Princess try a tiny experiment.', needs: ['bubblegum', 'flame'], duration: 9, color: '#dd8ba9' },
     parade: { title: 'Lump royalty', note: 'LSP requests a parade. Banana Guard complies.', needs: ['lsp', 'banana'], duration: 9, color: '#b58ac2' },
-    campfire: { title: 'Campfire break', note: 'A warm little pause with whoever is here.', needs: [], min: 2, duration: 14, color: '#d08b42' }
+    campfire: { title: 'Campfire break', note: 'A warm little pause with whoever is here.', needs: [], min: 2, duration: 14, color: '#d08b42' },
+    duo: { title: 'Cake’s shortcut', note: 'Cake leads. Fionna tries to keep up.', needs: ['fionna','cake'], duration: 8, color: '#c7ac50' },
+    batflight: { title: 'After-dark rehearsal', note: 'Marceline plays while a Bat Bug circles the stage.', needs: ['marceline','batbug'], duration: 10, color: '#79a180' }
   };
   class World {
     constructor(settings = {}, width = 1200, height = 800, random = Math.random) {
@@ -83,8 +95,11 @@ const OooCore = (() => {
     startScene(id) {
       if (!this.settings.enabled || this.paused || !this.available(id) || this.actors.some(a => a.state === 'drag')) return false;
       this.cancelScene(); const def = scenes[id]; let ids = [...def.needs];
-      if (id === 'concert') ids.push(...this.actors.filter(a => a.id !== 'marceline').slice(0,4).map(a => a.id));
-      if (id === 'campfire') ids = this.actors.slice(0,6).map(a => a.id);
+      const guests=this.actors.filter(a=>!ids.includes(a.id));
+      const offset=guests.length?this.sceneCount%guests.length:0;
+      const rotated=[...guests.slice(offset),...guests.slice(0,offset)];
+      if (id === 'concert') ids.push(...rotated.slice(0,4).map(a => a.id));
+      if (id === 'campfire') ids = rotated.slice(0,6).map(a => a.id);
       const [min,max] = this.range(); const span = Math.min(max-min, (ids.length-1)*96*this.scale);
       const center = this.width / 2; const positions = ids.map((_,i) => this.bound(center-span/2+(ids.length===1 ? 0 : i*span/(ids.length-1))));
       this.scene = { id, ids, positions, center, phase: 'gather', elapsed: 0, duration: def.duration, announced: false, seed: this.serial++ };
@@ -95,7 +110,7 @@ const OooCore = (() => {
       const a=this.actor(id); if (!a || !this.settings.enabled || this.paused) return false;
       if (this.scene?.ids.includes(id)) this.cancelScene();
       a.target=null; a.rest=10;
-      const state = { jake:'stretch', marceline:'music', lsp:'dance', gunter:'dance', bubblegum:'magic', flame:'magic' }[id] || 'cheer';
+      const state = { jake:'stretch', marceline:'music', lsp:'dance', gunter:'dance', bubblegum:'magic', flame:'magic', cake:'dance', slime:'dance', hotdog:'dance', turtle:'read', batbug:'dance' }[id] || 'cheer';
       this.state(a,state,state==='music'?7:3.5);
       if (state==='stretch') a.reach={ x:a.x, y:Math.max(45,this.floor-180*this.scale) };
       this.say(a,cast[id].lines[Math.floor(this.random()*cast[id].lines.length)]);
@@ -136,7 +151,7 @@ const OooCore = (() => {
         if(this.scene?.ids.includes(a.id)||a.state==='drag')continue;
         if(a.state==='drop') {if(a.elapsed>=a.duration){this.state(a,'idle',2);a.dropFrom=null;}continue;}
         if(a.state==='stretch'){if(a.elapsed>=a.duration){this.state(a,'idle',2);a.reach=null;}continue;}
-        if(['cheer','dance','music','magic','eat'].includes(a.state)){if(a.elapsed>=a.duration)this.state(a,'idle',1+this.random()*3);continue;}
+        if(['cheer','dance','music','magic','eat','read'].includes(a.state)){if(a.elapsed>=a.duration)this.state(a,'idle',1+this.random()*3);continue;}
         let snack=this.props.find(p=>p.owner===a.id);
         if(!snack&&!this.gentle){snack=this.props.filter(p=>!p.owner).sort((a1,b)=>Math.abs(a1.x-a.x)-Math.abs(b.x-a.x))[0];if(snack){snack.owner=a.id;a.target=snack.x;this.state(a,'walk',20);}}
         if(snack){a.target=snack.x;if(this.move(a,snack.x,dt,1.6)){snack.eaten=true;a.target=null;this.state(a,'eat',2.3);this.say(a,a.id==='gunter'?'Wenk. (Mine.)':'Snack acquired.');this.emit('fed',{id:a.id});}continue;}
@@ -196,6 +211,14 @@ const OooCore = (() => {
         actor('lsp').state='dance';actor('banana').state='walk';
         if(!this.gentle)s.ids.forEach((id,i)=>actor(id).x=this.bound(s.positions[i]+Math.sin(t*.5)*30*this.scale));
         if(t>1&&!s.announced){this.say(actor('lsp'),'Make way for my lumps.');s.announced=true;}
+      } else if(s.id==='duo'){
+        const f=actor('fionna'),c=actor('cake');f.state='run';c.state='run';
+        if(!this.gentle){const offset=Math.sin(t*.65)*55*this.scale;f.x=this.bound(s.positions[0]+offset);c.x=this.bound(s.positions[1]+offset);f.direction=c.direction=Math.cos(t*.65)>0?1:-1;c.lift=Math.abs(Math.sin(t*4))*9*this.scale;}
+        if(t>1&&!s.announced){this.say(f,'Cake, is this a shortcut?');this.say(c,'It is now!');s.announced=true;}
+      } else if(s.id==='batflight'){
+        const m=actor('marceline'),b=actor('batbug');m.state='music';b.state='walk';
+        if(!this.gentle){b.x=this.bound(m.x+Math.cos(t*1.5)*72*this.scale);b.lift=(30+Math.sin(t*1.5)*24)*this.scale;b.direction=Math.sin(t*1.5)>0?-1:1;}
+        if(t>1&&!s.announced){this.say(m,'Okay. You can be the opening act.');s.announced=true;}
       } else if(s.id==='campfire'&&t>1&&!s.announced){this.say(actor(s.ids[0]),'A little break between adventures.',4);s.announced=true;}
       if(t>=s.duration){const id=s.id;this.cancelScene();this.sceneCount++;this.emit('complete',{id,title:scenes[id].title});this.nextScene=this.time+(24+this.random()*20)/this.settings.activity;}
     }

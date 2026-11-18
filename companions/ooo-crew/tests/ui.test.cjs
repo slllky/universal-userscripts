@@ -33,16 +33,16 @@ async function fixture(){
 }
 test('actual compiled userscript controls and lifecycle',async t=>{
  const f=await fixture();const{query,click,fire,pump,storage,root,document}=f;
- await t.test('initialization creates one closed shadow host and nine controls with five selected',()=>{
+ await t.test('initialization creates one closed shadow host and seventeen controls with five selected',()=>{
   assert.equal(document.querySelectorAll('#aseerr-ooo-crew').length,1);assert.equal(document.getElementById('aseerr-ooo-crew').shadowRoot,null);
-  assert.equal(root.querySelectorAll('[data-join]').length,9);assert.equal(root.querySelectorAll('[data-join][aria-pressed="true"]').length,5);assert.equal(query('.book').hidden,false);assert.ok(document.getElementById('aseerr-jake-walker'));assert.equal(f.menus.size,4);
+  assert.equal(root.querySelectorAll('[data-join]').length,17);assert.equal(root.querySelectorAll('[data-join][aria-pressed="true"]').length,5);assert.equal(query('.book').hidden,false);assert.ok(document.getElementById('aseerr-jake-walker'));assert.equal(f.menus.size,4);
  });
  await t.test('inviting and removing a character updates the rendered crew and persisted settings',()=>{
   click('[data-join="bubblegum"]');assert.equal(query('[data-join="bubblegum"]').getAttribute('aria-pressed'),'true');assert.ok(storage.get('ooo-crew.settings.v1').selected.includes('bubblegum'));
   click('[data-join="bubblegum"]');assert.equal(storage.get('ooo-crew.settings.v1').selected.includes('bubblegum'),false);
  });
  await t.test('presets and theme buttons apply to the actual host',()=>{
-  click('[data-preset="everyone"]');assert.equal(storage.get('ooo-crew.settings.v1').selected.length,9);click('[data-tab="style"]');click('[data-theme="night"]');assert.equal(document.getElementById('aseerr-ooo-crew').dataset.theme,'night');
+  click('[data-preset="everyone"]');assert.equal(storage.get('ooo-crew.settings.v1').selected.length,17);click('[data-tab="style"]');click('[data-theme="night"]');assert.equal(document.getElementById('aseerr-ooo-crew').dataset.theme,'night');
  });
  await t.test('range input previews changes and change persists a numeric value',()=>{
   const input=query('[data-setting="size"]');input.value='1.45';fire(input,'input');assert.equal(input.nextElementSibling.textContent,'1.45×');fire(input,'change');assert.equal(storage.get('ooo-crew.settings.v1').size,1.45);
@@ -71,6 +71,12 @@ test('actual compiled userscript controls and lifecycle',async t=>{
  });
  await t.test('site snooze hides rendering and remains reversible from the guide',()=>{
   click('.launcher');click('[data-tab="style"]');click('[data-command="snooze"]');assert.ok(storage.get('ooo-crew.settings.v1').hiddenSites.includes('example.test'));assert.equal(document.getElementById('aseerr-ooo-crew').dataset.suspended,'true');click('[data-command="snooze"]');assert.equal(document.getElementById('aseerr-ooo-crew').dataset.suspended,'false');
+ });
+ await t.test('canvas dimensions follow the page viewport excluding the scrollbar',()=>{
+  Object.defineProperty(document.documentElement,'clientWidth',{configurable:true,value:985});
+  f.window.dispatchEvent(new f.window.Event('resize'));
+  assert.equal(query('.stage').width,985);assert.equal(query('.stage').style.width,'985px');
+  assert.equal(f.backing(query('.stage')).width,985);
  });
  await t.test('remote preference changes update the existing UI without a duplicate host',()=>{
   const remote={...storage.get('ooo-crew.settings.v1'),theme:'candy',selected:['jake','gunter']};f.listeners.get('ooo-crew.settings.v1')('ooo-crew.settings.v1',null,remote,true);assert.equal(document.getElementById('aseerr-ooo-crew').dataset.theme,'candy');vm.runInContext(script,f.context);assert.equal(document.querySelectorAll('#aseerr-ooo-crew').length,1);
