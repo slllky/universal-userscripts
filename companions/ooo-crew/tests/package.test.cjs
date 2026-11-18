@@ -3,9 +3,19 @@ const test=require('node:test'),assert=require('node:assert/strict'),fs=require(
 const root=path.resolve(__dirname,'..');const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 const script=read('Adventure-Time-Ooo-Crew.user.js');const frames=JSON.parse(read('assets/frames.json'));
 test('distributable parses and contains no unresolved assembly tokens',()=>{assert.doesNotThrow(()=>new vm.Script(script));assert.ok(!/__[A-Z]+__/.test(script));});
-test('new identity is separate from Jake; both web protocols have universal matching',()=>{assert.match(script,/@namespace\s+aseerr-adventure-time-ooo-crew/);assert.match(script,/@match\s+https:\/\/\*\/\*/);assert.match(script,/@match\s+http:\/\/\*\/\*/);assert.ok(!/@exclude|@include|@require|@connect|@resource/.test(script));assert.match(script,/@noframes/);});
+test('new identity is separate from Jake; both web protocols have universal matching',()=>{assert.match(script,/@namespace\s+aseerr-adventure-time-ooo-crew/);assert.match(script,/@match\s+https:\/\/\*\/\*/);assert.match(script,/@match\s+http:\/\/\*\/\*/);assert.ok(!/@exclude|@include|@require|@resource/.test(script));assert.match(script,/@noframes/);});
 test('sprite sheets are bundled PNGs and every animation references a valid frame',()=>{for(const name of ['crew.png','jake.png']){const b=fs.readFileSync(path.join(root,'assets',name));assert.equal(b.subarray(1,4).toString(),'PNG');assert.ok(script.includes(b.toString('base64')));}for(const [id,ids]of Object.entries(frames.animations)){assert.ok(ids.length>0,id);for(const n of ids)assert.ok(Number.isInteger(n)&&n>=0&&n<frames.count,id);}});
-test('all seventeen characters have idle frames; alternate Marceline has a full essential set',()=>{for(const id of Object.keys(require('../src/core.js').cast))assert.ok(frames.animations[id+'.idle']);for(const action of ['idle','walk','music','cheer'])assert.ok(frames.animations['archive.'+action]);});
-test('runtime includes no network request or remote execution API',()=>{const app=read('src/app.js');assert.ok(!/\b(fetch|XMLHttpRequest|WebSocket|eval)\s*\(/.test(app));assert.ok(!/@require|GM_xmlhttpRequest/.test(script));});
+test('all characters have idle frames; alternate Marceline has a full essential set',()=>{for(const id of Object.keys(require('../src/core.js').cast))assert.ok(frames.animations[id+'.idle']);for(const action of ['idle','walk','music','cheer'])assert.ok(frames.animations['archive.'+action]);});
+test('updater checks the metadata file on one declared host and offers the matching release',()=>{
+  const updates=require('../src/updates.js');
+  const header=read('Adventure-Time-Ooo-Crew.meta.js');
+  assert.ok(script.startsWith(header));
+  assert.equal(updates.parse(header),require('../package.json').version);
+  assert.equal(header.match(/@updateURL\s+(\S+)/)[1],updates.META);
+  assert.equal(header.match(/@downloadURL\s+(\S+)/)[1],updates.INSTALL);
+  assert.deepEqual([...header.matchAll(/@connect\s+(\S+)/g)].map(m=>m[1]),['raw.githubusercontent.com']);
+  assert.ok(!/\b(fetch|XMLHttpRequest|WebSocket|eval)\s*\(/.test(read('src/app.js')));
+  assert.ok(!/@require/.test(header));
+});
 test('offline preview contains the same simulation, renderer, and embedded art',()=>{const html=read('Ooo-Crew-Preview.html');assert.ok(html.includes(read('src/core.js')));assert.ok(html.includes(read('src/render.js')));assert.ok(html.includes('const PREVIEW=true;'));assert.ok(!html.includes('<!-- CREW_SCRIPT -->'));assert.ok(!/script src=|https?:.*\.woff/.test(html));});
 test('normal browsing defaults to a pointer-transparent stage; play tools are explicit',()=>{const css=read('src/styles.css'),app=read('src/app.js');assert.match(css,/\.stage\{[^}]*pointer-events:none/);assert.match(app,/playMode=false/);assert.match(app,/canvas.style.pointerEvents=tool\?'auto':'none'/);assert.match(css,/@media print/);});

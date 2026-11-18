@@ -8,22 +8,53 @@ const{core,render}=sandbox.api;const frames=JSON.parse(fs.readFileSync(path.join
 (async()=>{
  const assets={atlas:await loadImage(path.join(root,'assets/crew.png')),jake:await loadImage(path.join(root,'assets/jake.png')),frames};
  assert.equal(assets.atlas.width,frames.columns*frames.cell);
- const proof=createCanvas(1500,650),pc=proof.getContext('2d');pc.fillStyle='#e8e3d1';pc.fillRect(0,0,1500,650);pc.fillStyle='#2e4a3d';pc.font='bold 35px serif';pc.fillText('OOO CREW',40,55);pc.font='15px sans-serif';pc.fillText('Seventeen companions · Actual bundled sprites at their default relative sizes',42,84);
- const world=new core.World({...core.defaults,selected:core.presets.everyone,autoScenes:false,wander:false,size:1.1},1500,330,()=>.4);
- const layer=createCanvas(1500,330),lc=layer.getContext('2d');
- world.actors.forEach((a,i)=>{a.x=55+i*87;a.elapsed=.3;a.state='idle';});
- render.draw(lc,world,assets);pc.drawImage(layer,0,-70);
- pc.font='10px sans-serif';world.actors.forEach((a,i)=>pc.fillText(core.cast[a.id].short||core.cast[a.id].name,Math.max(15,Math.max(8,30+i*87)),285));
- world.apply({...world.settings,selected:['finn','jake','marceline','lsp','gunter']});world.startScene('concert');for(let i=0;i<280;i++)world.step(.05);render.draw(lc,world,assets);pc.drawImage(layer,0,175);pc.fillStyle='#2e4a3d';pc.font='13px sans-serif';pc.fillText('A tiny concert · Canvas render, not a browser screenshot',40,330);
+ const ids=Object.keys(core.cast), sceneIds=Object.keys(core.scenes);
+ const proof=createCanvas(1440,760),pc=proof.getContext('2d');
+ const ink='#25483b',paper='#f7f1da',accent='#c1ce95';
+ pc.fillStyle=paper;pc.fillRect(0,0,proof.width,proof.height);
+ pc.fillStyle=ink;pc.fillRect(0,0,proof.width,116);
+ pc.fillStyle='#c8dcaf';pc.font='bold 17px monospace';pc.fillText('THE OOO CREW FIELD GUIDE',37,37);
+ pc.fillStyle=paper;pc.font='bold 46px serif';pc.fillText('Pocket adventures',35,91);
+ pc.textAlign='right';pc.font='20px serif';pc.fillText(ids.length+' companions  /  '+sceneIds.length+' scenes',1404,91);
+ pc.textAlign='left';pc.imageSmoothingEnabled=false;
+ // Every actor gets a separate box so short and tall companions share a clear baseline.
+ const columns=9,width=152;
+ ids.forEach((id,index)=>{
+   const column=index%columns,row=Math.floor(index/columns);
+   const left=36+column*width,top=135+row*174,x=left+width/2,baseline=top+126;
+   if(column%2===row){pc.fillStyle='#eee7cb';pc.fillRect(left+2,top,width-4,161);}
+   pc.fillStyle='#d7d4b7';pc.beginPath();pc.ellipse(x,baseline+2,24,4,0,0,Math.PI*2);pc.fill();
+   const frame=frames.animations[id+'.idle'][id==='finn'?1:0];
+   render.sprite(pc,assets.atlas,frames,frame,x,baseline,1.35);
+   pc.textAlign='center';pc.font='bold 15px serif';pc.fillStyle=ink;
+   pc.fillText(core.cast[id].short||core.cast[id].name,x,top+151,width-6);
+ });
+ pc.textAlign='left';pc.fillStyle=ink;pc.fillRect(36,487,1368,2);
+ pc.fillStyle=ink;pc.font='bold 22px serif';pc.fillText('Inspection day',52,531);
+ pc.font='15px sans-serif';pc.fillText('Lemongrab and Banana Guard',52,558);
+ const scene=new core.World({...core.defaults,selected:['lemongrab','banana'],size:1.25,autoScenes:false},600,145,()=>.4);
+ scene.startScene('inspection');while(scene.scene?.phase==='gather')scene.step(.05);
+ for(let t=0;t<106;t++)scene.step(.05);
+ const layer=createCanvas(600,145),lc=layer.getContext('2d');render.draw(lc,scene,assets);pc.drawImage(layer,25,568);
+ pc.fillStyle=accent;pc.fillRect(669,510,2,212);
+ pc.fillStyle=ink;pc.font='bold 22px serif';pc.fillText('From the crew’s trick book',706,531);
+ const examples=[['jake','flair'],['marceline','flair'],['archive','greet'],['finn','greet']];
+ examples.forEach(([actor,action],i)=>{
+   const x=783+i*165,key=actor+'.'+action,sequence=frames.animations[key],index=Math.floor(sequence.length/2);
+   render.sprite(pc,assets.atlas,frames,sequence[index],x,686,1.35);
+   pc.fillStyle=ink;pc.font='14px sans-serif';pc.textAlign='center';
+   pc.fillText(frames.actionDetails[key].label,x,712,159);
+ });
  fs.writeFileSync(path.join(out,'crew-preview.png'),proof.toBuffer('image/png'));
- const states=['idle','walk','run','music','dance','cheer','magic','eat','drag','drop','stretch','read'];let checked=0;
+ const states=['idle','walk','run','music','dance','cheer','magic','eat','drag','drop','stretch','read','greet','flair','inspect','outburst'];let checked=0;
  for(const art of ['toon','archive'])for(const size of [.65,1.1,1.75])for(const state of states){
   const w=new core.World({...core.defaults,selected:core.presets.everyone,size,marcelineArt:art,autoScenes:false},1100,400,()=>.4);
-  for(const a of w.actors){a.state=state;a.elapsed=.4;a.duration=2;a.dragY=200;a.dropFrom=100;}
+  const layer=createCanvas(w.width,w.height),lc=layer.getContext('2d');
+  for(const a of w.actors){a.state=(['greet','flair','inspect','outburst'].includes(state)&&!core.newActions(a.id).includes(state))||(state==='stretch'&&a.id!=='jake')?'idle':state;a.elapsed=.4;a.duration=2;a.dragY=200;a.dropFrom=100;}
   for(const a of w.actors){const p=render.pose(w,a,frames);assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));assert.ok(p.frame>=0&&p.frame<frames.count);}
   render.draw(lc,w,assets);checked++;
  }
- for(const scene of Object.keys(core.scenes)){
+ for(const scene of sceneIds){
    const w=new core.World({...core.defaults,selected:core.presets.everyone,autoScenes:false},1000,350,()=>.4);w.startScene(scene);
    const c=createCanvas(1000,350),cx=c.getContext('2d');
    for(let frame=0;frame<100;frame++){w.step(.05);render.draw(cx,w,assets);}
@@ -33,5 +64,5 @@ const{core,render}=sandbox.api;const frames=JSON.parse(fs.readFileSync(path.join
  // Every packed frame has real visible pixels and remains inside its assigned cell.
  const atlasCanvas=createCanvas(assets.atlas.width,assets.atlas.height),ac=atlasCanvas.getContext('2d');ac.drawImage(assets.atlas,0,0);
  for(let i=0;i<frames.count;i++){const data=ac.getImageData((i%frames.columns)*128,Math.floor(i/frames.columns)*128,128,128).data;let count=0;for(let p=3;p<data.length;p+=4)if(data[p])count++;assert.ok(count>100,`empty frame ${i}`);}
- console.log(`Rendered ${checked} character-state/style/size combinations, eight scenes, and checked ${frames.count} nonempty atlas frames.\n${out}`);
+ console.log(`Rendered ${checked} lineups across actor states, styles and sizes, ${sceneIds.length} scenes, and checked ${frames.count} nonempty atlas frames.\n${out}`);
 })().catch(error=>{console.error(error);process.exitCode=1;});

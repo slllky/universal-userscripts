@@ -22,6 +22,15 @@ const OooCore = (() => {
     turtle: { name: 'Turtle Princess', short: 'Turtle', subtitle: 'A quiet chapter between quests.', color: '#94a36a', height: 54, speed: 18, facing: -1, lines: ['Just one more chapter.', 'Every quest needs a reading break.', 'I saved your place.'], trick: 'Book break' },
     batbug: { name: 'Bat Bug', subtitle: 'A tiny flapping troublemaker.', color: '#497f61', height: 27, speed: 56, facing: -1, float: 65, lines: ['Flap. Flap. Very busy.', 'A small nocturnal detour.', 'The ceiling looked interesting.'], trick: 'Wing wiggle' }
   };
+  cast.lemongrab = {
+    name: 'Earl of Lemongrab', short: 'Lemongrab', subtitle: 'Here to inspect the premises.',
+    color: '#beb332', height: 85, speed: 38, facing: 1,
+    lines: ['This crumb is out of formation.', 'Who authorized this picnic?', 'UNACCEPTABLE!'],
+    trick: 'Royal inspection'
+  };
+  const signatureStates = { jake:'stretch', marceline:'music', lsp:'dance', gunter:'dance', bubblegum:'magic', flame:'magic', cake:'dance', slime:'dance', hotdog:'dance', turtle:'read', batbug:'dance', lemongrab:'inspect' };
+  const newActions = id => id === 'lemongrab' ? ['inspect','outburst'] : ['greet','flair'];
+  const timedActions = new Set(['cheer','dance','music','magic','eat','read','greet','flair','inspect','outburst']);
   const presets = {
     friends: ['finn', 'jake', 'marceline', 'lsp', 'gunter'],
     candy: ['finn', 'jake', 'bubblegum', 'flame', 'banana', 'corn'],
@@ -50,6 +59,10 @@ const OooCore = (() => {
     campfire: { title: 'Campfire break', note: 'A warm little pause with whoever is here.', needs: [], min: 2, duration: 14, color: '#d08b42' },
     duo: { title: 'Cake’s shortcut', note: 'Cake leads. Fionna tries to keep up.', needs: ['fionna','cake'], duration: 8, color: '#c7ac50' },
     batflight: { title: 'After-dark rehearsal', note: 'Marceline plays while a Bat Bug circles the stage.', needs: ['marceline','batbug'], duration: 10, color: '#79a180' }
+  };
+  scenes.inspection = {
+    title: 'Inspection day', note: 'Banana Guard presents the snack for Lemongrab’s royal inspection.',
+    needs: ['lemongrab','banana'], duration: 9, color: '#bbac30'
   };
   class World {
     constructor(settings = {}, width = 1200, height = 800, random = Math.random) {
@@ -106,15 +119,21 @@ const OooCore = (() => {
       ids.forEach((key,i) => { const a=this.actor(key); this.state(a,'walk',99); a.target=positions[i]; a.bubbleUntil=0; });
       this.emit('scene', { id, title: def.title }); return true;
     }
-    trick(id) {
-      const a=this.actor(id); if (!a || !this.settings.enabled || this.paused) return false;
+    trick(id, action = 'signature') {
+      const a = this.actor(id);
+      if (!a || !this.settings.enabled || this.paused || a.state === 'drag') return false;
+      if (action !== 'signature' && !newActions(id).includes(action)) return false;
       if (this.scene?.ids.includes(id)) this.cancelScene();
-      a.target=null; a.rest=10;
-      const state = { jake:'stretch', marceline:'music', lsp:'dance', gunter:'dance', bubblegum:'magic', flame:'magic', cake:'dance', slime:'dance', hotdog:'dance', turtle:'read', batbug:'dance' }[id] || 'cheer';
-      this.state(a,state,state==='music'?7:3.5);
-      if (state==='stretch') a.reach={ x:a.x, y:Math.max(45,this.floor-180*this.scale) };
-      this.say(a,cast[id].lines[Math.floor(this.random()*cast[id].lines.length)]);
-      this.emit('trick',{id}); return true;
+      a.target = null;
+      a.rest = 10;
+      const state = action === 'signature' ? signatureStates[id] || 'cheer' : action;
+      this.state(a, state, state === 'music' ? 7 : 3.5);
+      if (state === 'stretch') a.reach = {x:a.x, y:Math.max(45, this.floor - 180*this.scale)};
+      if (state === 'outburst') this.say(a, 'UNACCEPTABLE!');
+      else if (state === 'inspect') this.say(a, 'Hold still. There are crumbs to count.');
+      else if (action === 'signature') this.say(a, cast[id].lines[Math.floor(this.random()*cast[id].lines.length)]);
+      this.emit('trick', {id, action, state});
+      return true;
     }
     dropSnack(x) {
       if (!this.settings.enabled || this.paused || !this.actors.length) return false;
@@ -151,7 +170,7 @@ const OooCore = (() => {
         if(this.scene?.ids.includes(a.id)||a.state==='drag')continue;
         if(a.state==='drop') {if(a.elapsed>=a.duration){this.state(a,'idle',2);a.dropFrom=null;}continue;}
         if(a.state==='stretch'){if(a.elapsed>=a.duration){this.state(a,'idle',2);a.reach=null;}continue;}
-        if(['cheer','dance','music','magic','eat','read'].includes(a.state)){if(a.elapsed>=a.duration)this.state(a,'idle',1+this.random()*3);continue;}
+        if(timedActions.has(a.state)){if(a.elapsed>=a.duration)this.state(a,'idle',1+this.random()*3);continue;}
         let snack=this.props.find(p=>p.owner===a.id);
         if(!snack&&!this.gentle){snack=this.props.filter(p=>!p.owner).sort((a1,b)=>Math.abs(a1.x-a.x)-Math.abs(b.x-a.x))[0];if(snack){snack.owner=a.id;a.target=snack.x;this.state(a,'walk',20);}}
         if(snack){a.target=snack.x;if(this.move(a,snack.x,dt,1.6)){snack.eaten=true;a.target=null;this.state(a,'eat',2.3);this.say(a,a.id==='gunter'?'Wenk. (Mine.)':'Snack acquired.');this.emit('fed',{id:a.id});}continue;}
@@ -164,7 +183,10 @@ const OooCore = (() => {
         if(a.elapsed>=a.duration){
           if(this.settings.wander && a.state!=='walk')this.state(a,'walk',(3+this.random()*5)/this.settings.activity);
           else this.state(a,'idle',(2+this.random()*5)/this.settings.activity);
-          if(this.random()<.22 && !a.rest){this.trick(a.id);}
+          if(this.random()<.22 && !a.rest){
+            const actions=a.id==='lemongrab' ? newActions(a.id) : ['signature',...newActions(a.id)];
+            this.trick(a.id, actions[Math.floor(this.random()*actions.length)]);
+          }
         }
         if(a.id==='jake'&&!a.rest&&this.pointer&&this.time-this.pointer.at<1.2&&this.pointer.y<this.floor-70*this.scale&&this.pointer.y>this.floor-340*this.scale){
           const dx=Math.abs(this.pointer.x-a.x);if(dx<180*this.scale){this.state(a,'stretch',3.1);a.reach={x:this.bound(this.pointer.x),y:Math.max(35,this.pointer.y)};a.rest=15;}
@@ -219,10 +241,17 @@ const OooCore = (() => {
         const m=actor('marceline'),b=actor('batbug');m.state='music';b.state='walk';
         if(!this.gentle){b.x=this.bound(m.x+Math.cos(t*1.5)*72*this.scale);b.lift=(30+Math.sin(t*1.5)*24)*this.scale;b.direction=Math.sin(t*1.5)>0?-1:1;}
         if(t>1&&!s.announced){this.say(m,'Okay. You can be the opening act.');s.announced=true;}
+      } else if(s.id==='inspection'){
+        const earl=actor('lemongrab'),guard=actor('banana');
+        earl.state=t<4?'inspect':t<6.5?'outburst':'idle';
+        guard.state=t<3?'greet':t<6.5?'idle':'flair';
+        if(t>.5&&!s.announced){this.say(guard,'One regulation snack, sir.');s.announced=true;}
+        if(t>=4&&!s.verdict){this.say(earl,'This crumb is OFF CENTER!',2.3);s.verdict=true;}
+        if(t>=6.5&&!s.resolved){this.say(guard,'I can rotate the plate.');s.resolved=true;}
       } else if(s.id==='campfire'&&t>1&&!s.announced){this.say(actor(s.ids[0]),'A little break between adventures.',4);s.announced=true;}
       if(t>=s.duration){const id=s.id;this.cancelScene();this.sceneCount++;this.emit('complete',{id,title:scenes[id].title});this.nextScene=this.time+(24+this.random()*20)/this.settings.activity;}
     }
   }
-  return { cast, presets, defaults, scenes, sanitize, clamp, World };
+  return { cast, presets, defaults, scenes, newActions, sanitize, clamp, World };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = OooCore;

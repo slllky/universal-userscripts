@@ -15,3 +15,5 @@
 :host([data-gentle=true]) *{animation:none!important;transition:none!important}
 @media print{:host{display:none!important}}
 @media(max-height:500px){.cover{padding:12px 20px}.seal{width:43px;height:43px;font-size:20px}.cover h1{font-size:24px}.page{min-height:100px}.book{bottom:65px;max-height:calc(100dvh - 82px)}}
+
+.actor-actions{display:flex;gap:2px 9px;flex-wrap:wrap}.actor-actions button{padding:4px 1px 3px;min-height:24px;text-align:left;line-height:1.2}

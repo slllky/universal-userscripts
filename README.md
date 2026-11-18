@@ -15,7 +15,7 @@ Aseerr / slllky’s collection of **13 Tampermonkey scripts**, organized by what
 
 | Category | Script and details | Version | Source / install |
 |---|---|---|---|
-| Browser Companions | [Adventure Time — Ooo Crew](companions/ooo-crew/) | 1.1.0 | [.user.js](companions/ooo-crew/Adventure-Time-Ooo-Crew.user.js) |
+| Browser Companions | [Adventure Time — Ooo Crew](companions/ooo-crew/) | 1.2.0 | [.user.js](companions/ooo-crew/Adventure-Time-Ooo-Crew.user.js) |
 | Browser Companions | [Beat — Browser Skater](companions/beat/) | 1.1.1 | [.user.js](companions/beat/Beat-Browser-Skater.user.js) |
 | Browser Companions | [Jake — Stretch Walker](companions/jake/) | 2.0.1 | [.user.js](companions/jake/Jake-Stretch-Walker.user.js) |
 | Browser Companions | [Rengoku — Bottom Patrol](companions/rengoku/) | 1.1.0 | [.user.js](companions/rengoku/Rengoku-Bottom-Patrol.user.js) |
@@ -36,7 +36,7 @@ Aseerr / slllky’s collection of **13 Tampermonkey scripts**, organized by what
 3. Select **Raw** on GitHub to open the userscript, then review Tampermonkey’s installation dialog.
 4. If the dialog does not open, download the raw file and import it into Tampermonkey, or paste the full source into a new script and save.
 
-For a private repository, sign into GitHub with an account that has access first. If GitHub cannot preview a large file, use **View raw** or **Download raw file**. Disable older duplicate installations. Cursor replacements and typing effects can overlap when several are enabled.
+If GitHub cannot preview a large file, use **View raw** or **Download raw file**. Disable older duplicate installations. Cursor replacements and typing effects can overlap when several are enabled.
 
 ## Updating and saves
 
@@ -52,4 +52,4 @@ The original 11 userscript source files are preserved byte-for-byte from the sup
 
 The [manifest](manifest.json) records the current version and SHA-256 checksum of every script. The original collection’s checksums matched and all 11 JavaScript syntax checks passed during its import. RIFT 1.2.0 passes syntax and universal-domain checks; its 35 automated checks cover saves, game components, animation, view templates, illustrated rendering, pigment colors, and temporary wardrobe try-ons. See [RIFT’s validation notes](companions/rift/TESTING.md) for the live-browser checks that remain unverified. Browser gameplay and site compatibility were not tested as part of this upload.
 
-Ooo Crew 1.1.0 has seventeen selectable companions and eight coordinated scenes, with lossless sprite fixes and viewport bounds. Its 56 automated test/subtest entries cover core behavior, packaging, and DOM controls; separate native canvas checks cover the bundled art. Live Tampermonkey/browser compatibility remains unverified. See [Ooo Crew’s validation notes](companions/ooo-crew/TESTING.md).
+Ooo Crew 1.2.0 adds the Earl of Lemongrab, an inspection scene with Banana Guard, two new actions per returning companion, and update notifications. [Browse the sprite sheets](https://github.com/slllky/tampermonkey-art) or see [Ooo Crew’s validation notes](companions/ooo-crew/TESTING.md).

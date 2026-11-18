@@ -1,6 +1,6 @@
 # Sprite provenance and preparation
 
-These are third-party Adventure Time sprites supplied by the user for this companion. Character rights remain with their respective owners. Original sprites, fan sprites, and the assembly code do not share an assumed blanket license.
+The original 1.1.0 atlas uses third-party Adventure Time sprites supplied by the user. Character rights remain with their respective owners. Original sprites, fan sprites, and the assembly code do not share an assumed blanket license.
 
 The exact supplied URLs, download hashes, lossless replacement URLs, dimensions, and selection decisions are in [sources.json](sources.json). Public CDN query tokens are retained as provenance; runtime code never fetches them. [extraction.json](extraction.json) records selection windows and the resolved complete-character bounds. [frames.json](frames.json) maps animation names to the packed atlas.
 
@@ -34,13 +34,27 @@ The Spriters Resource was consulted while identifying possible original game she
 - Detached accessories are retained when they belong to the selection. Neighboring poses, labels, and sheet-guide lines are not included.
 - Frames are sized by animation-set reference height, centered on consistent bottom anchors, packed into transparent 128×128 cells, and displayed with smoothing disabled.
 - Jake’s original decoded atlas is preserved separately so his face and feet can remain rigid during the stretch effect.
-- No image-generation model was used to replace or redraw the supplied characters.
+- The original 160 frames come directly from the supplied artwork.
 
 `crew.png`, `jake.png`, and `frames.json` are the normal build inputs. The exact ink bounds in `frames.json` are also used to keep rotated or dragged sprites inside the viewport. The extractor reads `assets/source-sheets/` directly for the checked-in lossless sheets. Re-extraction is optional and needs Pillow, NumPy, SciPy, the eight source files named `sheet-1.jpg` … `sheet-8.jpg` (source 7 is `.png`), and the original Jake userscript saved as `Jake-original.user.js` in one input directory:
 
 ```sh
 python tools/extract-sprites.py /path/to/input-directory
+python tools/pack-action-sheets.py /path/to/tampermonkey-art
 node build.cjs
 ```
 
 Public source links can expire. Retain the checked-in packed assets when updating behavior or UI.
+
+## Lemongrab and the additional action sheets
+
+The first 160 cells come from the original character sheets. The atlas then includes the new Lemongrab model and two additional animation sets for each previous companion. The supplementary sheets combine generated art based on the supplied references with new poses and effects drawn from existing sprite pixels. Marceline has separate sheets for her two costumes; the alternate sheet uses poses from Jarquin10’s credited archive (source 3). The approved Lemongrab source sheet and the action sheets submitted for review are in [tampermonkey-art at the exact revision used by this build](https://github.com/slllky/tampermonkey-art/tree/48e7836f4e8bf85bc165cc0a0a5c8a579ce7ca61).
+
+Each sheet uses 128 × 128 cells with a local foot pivot of (64, 120). Ink bounds use an exclusive right and bottom edge. The combined `frames.json` records the display label and native facing for each new action in `actionDetails`. A facing of 1 means the art faces right. Optional `durations` entries are in milliseconds per frame.
+
+After extracting the original sheets, or to refresh the action pack on an existing atlas, run the following from this companion's directory with a local checkout of the art repository at commit `48e7836f4e8bf85bc165cc0a0a5c8a579ce7ca61`:
+
+```sh
+python tools/pack-action-sheets.py /path/to/tampermonkey-art
+node build.cjs
+```

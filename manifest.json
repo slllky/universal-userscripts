@@ -1,10 +1,10 @@
 [
   {
     "name": "Adventure Time — Ooo Crew",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "category": "companions",
     "path": "companions/ooo-crew/Adventure-Time-Ooo-Crew.user.js",
-    "sha256": "de7091543c208f45e9e588245aa7fbf7b3e028e25658d101b3e1778d15c2ac53"
+    "sha256": "ea76c84e3154d7cf9cae6e3eb0e512ce47d6705ec50375dbec2ab2e27d94b39f"
   },
   {
     "name": "Beat — Browser Skater",

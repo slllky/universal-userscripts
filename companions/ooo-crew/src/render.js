@@ -26,13 +26,29 @@ const OooRender = (() => {
   }
   function pose(world, actor, frames) {
     const def=OooCore.cast[actor.id], s=world.scale;
-    let art=actor.id==='marceline'&&world.settings.marcelineArt==='archive'?'archive':actor.id;
     const state=actor.state;
-    let action={ run:'run', walk:'walk', music:'music', dance:'dance', cheer:'cheer', eat:'cheer', magic:'cheer', drag:'cheer', drop:'cheer' }[state]||'idle';
-    if(!frames.animations[art+'.'+action])action=state==='dance'?'cheer':'idle';
-    const list=frames.animations[art+'.'+action]||frames.animations[art+'.idle'];
-    const rate=actor.id==='batbug'?9:({walk:9,run:12,dance:7,music:7,idle:3.5}[action]||6);
-    const index=world.gentle?0:(actor.id==='finn'&&action==='idle'?1:Math.floor((actor.elapsed+actor.seed)*rate)%list.length);
+    const chosenArt=actor.id==='marceline' && world.settings.marcelineArt==='archive' ? 'archive' : actor.id;
+    const requested={eat:'cheer',magic:'cheer',drag:'cheer',drop:'cheer'}[state] || state;
+    // Alternate costumes have their own common poses. A new character-specific
+    // action may live only on the main sheet, so use it before falling back to idle.
+    const candidates=[chosenArt+'.'+requested,actor.id+'.'+requested];
+    if(state==='dance') candidates.push(chosenArt+'.cheer');
+    candidates.push(chosenArt+'.idle');
+    const key=candidates.find(name=>frames.animations[name]?.length);
+    const [art,action]=key.split('.');
+    const list=frames.animations[key];
+    const fresh=OooCore.newActions(actor.id).includes(action);
+    const rate=actor.id==='batbug' && !fresh ? 9 : ({walk:9,run:12,dance:7,music:7,idle:3.5,greet:4,flair:4,inspect:4,outburst:5}[action]||6);
+    const elapsed=fresh ? actor.elapsed : actor.elapsed+actor.seed;
+    const durations=frames.durations?.[key];
+    let index;
+    if(world.gentle) index=fresh?Math.floor(list.length/2):0;
+    else if(actor.id==='finn'&&action==='idle') index=1;
+    else if(durations && durations.length===list.length){
+      let remaining=(elapsed*1000)%durations.reduce((total,duration)=>total+duration,0);
+      index=durations.findIndex(duration=>{remaining-=duration;return remaining<0;});
+      if(index<0)index=0;
+    }else index=Math.floor(elapsed*rate)%list.length;
     const frame=list[Math.min(index,list.length-1)];
     let y=world.floor-(def.float||0)*s;
     if(!world.gentle){
@@ -49,7 +65,8 @@ const OooRender = (() => {
     }
     const b=frames.bounds?.[frame]||[0,0,128,128];
     const angle=!world.gentle&&state==='dance'?Math.sin(actor.elapsed*5)*.08:0;
-    const geometry=state==='stretch'?stretchPose(world,actor):fit(world,actor.x,y,s,angle,actor.direction!==def.facing,[b[0]-64,b[1]-120,b[2]-64,b[3]-120]);
+    const facing=frames.actionDetails?.[key]?.facing ?? (art==='archive'?1:def.facing);
+    const geometry=state==='stretch'?stretchPose(world,actor):fit(world,actor.x,y,s,angle,actor.direction!==facing,[b[0]-64,b[1]-120,b[2]-64,b[3]-120]);
     return {...geometry,frame,art,action};
   }
   function sprite(ctx,atlas,frames,frame,x,y,scale=1,flip=false,angle=0) {
@@ -107,6 +124,7 @@ const OooRender = (() => {
     }
     if(scene?.phase==='play'){
       if(scene.id==='campfire')icon(ctx,'fire',scene.center,world.floor,scale*(world.gentle?1:1+Math.sin(world.time*9)*.04));
+      if(scene.id==='inspection')icon(ctx,'snack',scene.center,world.floor,scale*.75);
       if(scene.id==='science')icon(ctx,'flask',scene.center,world.floor,scale*1.4);
     }
     const poses=[];

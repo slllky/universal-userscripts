@@ -3,16 +3,22 @@ const fs=require('node:fs');
 const path=require('node:path');
 const root=__dirname;
 const read=name=>fs.readFileSync(path.join(root,name),'utf8');
+const {META, INSTALL}=require('./src/updates.js');
+const {version}=require('./package.json');
 const metadata=`// ==UserScript==
 // @name         Adventure Time — Ooo Crew
 // @namespace    aseerr-adventure-time-ooo-crew
-// @version      1.1.0
-// @description  Seventeen Adventure Time companions, sprite animations, group adventures, draggable friends, snacks, and a customizable Ooo field guide.
+// @version      ${version}
+// @description  Adventure Time companions, sprite animations, group adventures, draggable friends, snacks, and a customizable Ooo field guide.
 // @author       Aseerr / slllky (compilation); sprite credits in companions/ooo-crew/assets/README.md
 // @match        https://*/*
 // @match        http://*/*
 // @run-at       document-end
 // @noframes
+// @updateURL    ${META}
+// @downloadURL  ${INSTALL}
+// @connect      raw.githubusercontent.com
+// @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_registerMenuCommand
@@ -25,6 +31,7 @@ const metadata=`// ==UserScript==
 // Based on the existing Jake Stretch Walker; the original script is unchanged.
 `;
 const substitutions={
+  __VERSION__:JSON.stringify(version),
   __STYLES__:JSON.stringify(read('src/styles.css')),
   __ATLAS__:JSON.stringify(fs.readFileSync(path.join(root,'assets/crew.png')).toString('base64')),
   __JAKE__:JSON.stringify(fs.readFileSync(path.join(root,'assets/jake.png')).toString('base64')),
@@ -35,8 +42,10 @@ function build(preview){
   for(const[token,value]of Object.entries({...substitutions,__PREVIEW__:String(preview)}))app=app.replaceAll(token,()=>value);
   if(/__[A-Z]+__/.test(app))throw new Error('Unresolved build token');
   // Keep module names isolated from both the page and other userscripts.
-  return metadata+'\n(() => {\n'+read('src/core.js')+'\n'+read('src/render.js')+'\n'+app+'\n})();\n';
+  return metadata+'\n(() => {\n'+read('src/core.js')+'\n'+read('src/updates.js')+'\n'+read('src/render.js')+'\n'+app+'\n})();\n';
 }
+const header=metadata.slice(0,metadata.indexOf('// ==/UserScript==')+'// ==/UserScript=='.length)+'\n';
+fs.writeFileSync(path.join(root,'Adventure-Time-Ooo-Crew.meta.js'),header);
 const script=build(false);
 fs.writeFileSync(path.join(root,'Adventure-Time-Ooo-Crew.user.js'),script);
 const preview=read('src/preview.html').replace('<!-- CREW_SCRIPT -->','<script>\n'+build(true).replaceAll('</script','<\\/script')+'\n</script>');

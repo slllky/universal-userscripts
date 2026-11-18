@@ -11,8 +11,8 @@ test('settings tolerate malformed imports, bad types, and unknown character IDs'
   const value=sanitize({size:Infinity,speed:-5,bottom:99999,selected:['jake','jake','constructor','__proto__','finn'],sound:'true',theme:'evil',hiddenSites:['example.com','<script>',{},'example.com'],motion:'gentle'});
   assert.deepEqual(value.selected,['jake','finn']);assert.equal(value.size,defaults.size);assert.equal(value.speed,.4);assert.equal(value.bottom,240);assert.equal(value.sound,false);assert.equal(value.theme,'treehouse');assert.deepEqual(value.hiddenSites,['example.com']);
 });
-test('separate instances never share mutable defaults or selected crews',()=>{const a=world(),b=world();a.settings.selected.pop();assert.equal(b.settings.selected.length,17);assert.equal(presets.everyone.length,17);});
-test('seventeen unique companions and every scene declares real cast members',()=>{assert.equal(Object.keys(cast).length,17);for(const s of Object.values(scenes))for(const id of s.needs)assert.ok(cast[id]);assert.equal(new Set(world().actors.map(a=>a.id)).size,17);});
+test('separate instances never share mutable defaults or selected crews',()=>{const a=world(),b=world();a.settings.selected.pop();assert.equal(b.settings.selected.length,18);assert.equal(presets.everyone.length,18);});
+test('eighteen unique companions and every scene declares real cast members',()=>{assert.equal(Object.keys(cast).length,18);for(const s of Object.values(scenes))for(const id of s.needs)assert.ok(cast[id]);assert.equal(new Set(world().actors.map(a=>a.id)).size,18);});
 test('an empty crew stays empty; no invisible actors or automatic spawns',()=>{const w=world({selected:[]});advance(w,150);assert.equal(w.actors.length,0);assert.equal(w.scene,null);assert.equal(w.dropSnack(10),false);});
 test('unavailable pair scenes cannot start or conjure missing characters',()=>{const w=world({selected:['jake']});assert.equal(w.startScene('heroes'),false);assert.equal(w.startScene('concert'),false);assert.equal(w.startScene('campfire'),false);assert.equal(w.startScene('not-a-scene'),false);assert.equal(w.actors.length,1);});
 for(const id of Object.keys(scenes))test(`${id}: participants gather, act, finish once, and release their scene`,()=>{
@@ -35,3 +35,33 @@ test('resize cancels scenes, frees drag state, and keeps every actor in view',()
 test('Jake stretches toward a nearby cursor with a cooldown',()=>{const w=world({selected:['jake'],autoScenes:false,wander:false});const a=w.actor('jake');a.rest=0;w.pointer={x:a.x+30,y:w.floor-140,at:w.time};w.step(.05);assert.equal(a.state,'stretch');assert.equal(a.reach.x,w.pointer.x);assert.ok(a.rest>10);advance(w,4);assert.notEqual(a.state,'stretch');});
 test('speech is bounded to two bubbles and chatter off suppresses new dialogue',()=>{const w=world();for(const a of w.actors)w.say(a,'Hello');assert.equal(w.actors.filter(a=>a.bubbleUntil>w.time).length,2);w.apply({...w.settings,chatter:false});const a=w.actor('finn'),before=a.bubble;w.say(a,'Should not appear');assert.equal(a.bubble,before);});
 test('eight simulated minutes across sizes stay finite and scenes do not deadlock',()=>{const w=world();for(let i=0;i<9600;i++){if(i===1500)w.resize(360,640);if(i===4000)w.resize(1500,900);if(i===5500)w.apply({...w.settings,size:1.75,speed:1.8});w.step(.05);const[lo,hi]=w.range();for(const a of w.actors){assert.ok(Number.isFinite(a.x)&&a.x>=lo-.01&&a.x<=hi+.01);assert.ok(Number.isFinite(a.elapsed));}assert.ok(!w.scene||w.scene.elapsed<15);}assert.ok(w.sceneCount>3);});
+
+test('each friend can perform both of their named actions on demand',()=>{
+  const w=world({autoScenes:false,wander:false});
+  for(const a of w.actors){
+    const actions=a.id==='lemongrab'?['inspect','outburst']:['greet','flair'];
+    for(const action of actions){
+      assert.equal(w.trick(a.id,action),true);assert.equal(a.state,action);
+      w.step(.05);assert.equal(a.state,action);
+      advance(w,3.6);assert.notEqual(a.state,action);
+    }
+    assert.equal(w.trick(a.id,'invented'),false);
+  }
+  w.paused=true;assert.equal(w.trick('lemongrab','outburst'),false);
+});
+test('Lemongrab inspects a snack, issues his verdict and earns an inspection postcard',()=>{
+  const w=world({selected:['lemongrab','banana'],autoScenes:false,motion:'gentle'});
+  assert.ok(w.startScene('inspection'));advance(w,1.5);assert.equal(w.actor('lemongrab').state,'inspect');
+  assert.equal(w.actor('banana').state,'greet');advance(w,3.5);assert.equal(w.actor('lemongrab').state,'outburst');
+  advance(w,4.5);assert.ok(w.drain().some(e=>e.type==='complete'&&e.id==='inspection'));
+});
+test('occasional free play uses every new action without user input',()=>{
+  const w=world({autoScenes:false,activity:2});
+  const observed=new Map(w.actors.map(a=>[a.id,new Set()]));
+  for(let i=0;i<24000;i++){
+    w.step(.05);
+    for(const event of w.drain())if(event.type==='trick')observed.get(event.id).add(event.action);
+  }
+  for(const [id,actions] of observed)for(const state of id==='lemongrab'?['inspect','outburst']:['greet','flair'])
+    assert.ok(actions.has(state),id+' should occasionally '+state);
+});

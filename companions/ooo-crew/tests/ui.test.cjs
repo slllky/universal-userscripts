@@ -3,7 +3,7 @@
 const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const {parseHTML}=require('linkedom');const {createCanvas,loadImage}=require('@napi-rs/canvas');
 const script=fs.readFileSync(path.join(__dirname,'../Adventure-Time-Ooo-Crew.user.js'),'utf8');
-async function fixture(){
+async function fixture(overrides={}){
   const {window}=parseHTML('<!doctype html><html><body><input id="page-input"><div id="aseerr-jake-walker"></div></body></html>');
   const {document,HTMLElement,HTMLCanvasElement,Event}=window;const canvases=new WeakMap(),storage=new Map(),rafs=new Map(),listeners=new Map(),menus=new Map();
   let root,serial=0,now=0,focus=null;const decodes=[];
@@ -20,7 +20,7 @@ async function fixture(){
     GM_getValue:(key,fallback)=>storage.has(key)?structuredClone(storage.get(key)):fallback,
     GM_setValue:(key,value)=>storage.set(key,JSON.parse(JSON.stringify(value))),
     GM_registerMenuCommand:(name,fn)=>menus.set(name,fn),GM_addValueChangeListener:(key,fn)=>listeners.set(key,fn),
-    createImageBitmap:blob=>{const promise=blob.arrayBuffer().then(data=>loadImage(Buffer.from(data)));decodes.push(promise);return promise;}});
+    createImageBitmap:blob=>{const promise=blob.arrayBuffer().then(data=>loadImage(Buffer.from(data)));decodes.push(promise);return promise;},...overrides});
   vm.runInContext(script,context);
   await Promise.all(decodes);
   await new Promise(resolve=>setImmediate(resolve));
@@ -33,16 +33,25 @@ async function fixture(){
 }
 test('actual compiled userscript controls and lifecycle',async t=>{
  const f=await fixture();const{query,click,fire,pump,storage,root,document}=f;
- await t.test('initialization creates one closed shadow host and seventeen controls with five selected',()=>{
+ await t.test('initialization creates one closed shadow host and eighteen controls with five selected',()=>{
   assert.equal(document.querySelectorAll('#aseerr-ooo-crew').length,1);assert.equal(document.getElementById('aseerr-ooo-crew').shadowRoot,null);
-  assert.equal(root.querySelectorAll('[data-join]').length,17);assert.equal(root.querySelectorAll('[data-join][aria-pressed="true"]').length,5);assert.equal(query('.book').hidden,false);assert.ok(document.getElementById('aseerr-jake-walker'));assert.equal(f.menus.size,4);
+  assert.equal(root.querySelectorAll('[data-join]').length,18);assert.equal(root.querySelectorAll('[data-join][aria-pressed="true"]').length,5);assert.equal(query('.book').hidden,false);assert.ok(document.getElementById('aseerr-jake-walker'));assert.equal(f.menus.size,4);
  });
  await t.test('inviting and removing a character updates the rendered crew and persisted settings',()=>{
   click('[data-join="bubblegum"]');assert.equal(query('[data-join="bubblegum"]').getAttribute('aria-pressed'),'true');assert.ok(storage.get('ooo-crew.settings.v1').selected.includes('bubblegum'));
   click('[data-join="bubblegum"]');assert.equal(storage.get('ooo-crew.settings.v1').selected.includes('bubblegum'),false);
  });
+ await t.test('only invited friends offer their own animation buttons',()=>{
+  const check=(id,acts)=>{for(const action of acts){
+    const button=query('[data-trick="'+id+'"][data-action="'+action+'"]');
+    assert.ok(button, id+'/'+action);assert.ok(button.textContent.trim());assert.equal(button.hasAttribute('disabled'),!storage.get('ooo-crew.settings.v1').selected.includes(id));
+  }};
+  check('finn',['signature','greet','flair']);check('lemongrab',['inspect','outburst']);
+  click('[data-join="lemongrab"]');check('lemongrab',['inspect','outburst']);
+  click('[data-trick="lemongrab"][data-action="outburst"]');pump(2);
+ });
  await t.test('presets and theme buttons apply to the actual host',()=>{
-  click('[data-preset="everyone"]');assert.equal(storage.get('ooo-crew.settings.v1').selected.length,17);click('[data-tab="style"]');click('[data-theme="night"]');assert.equal(document.getElementById('aseerr-ooo-crew').dataset.theme,'night');
+  click('[data-preset="everyone"]');assert.equal(storage.get('ooo-crew.settings.v1').selected.length,18);click('[data-tab="style"]');click('[data-theme="night"]');assert.equal(document.getElementById('aseerr-ooo-crew').dataset.theme,'night');
  });
  await t.test('range input previews changes and change persists a numeric value',()=>{
   const input=query('[data-setting="size"]');input.value='1.45';fire(input,'input');assert.equal(input.nextElementSibling.textContent,'1.45×');fire(input,'change');assert.equal(storage.get('ooo-crew.settings.v1').size,1.45);
@@ -81,4 +90,42 @@ test('actual compiled userscript controls and lifecycle',async t=>{
  await t.test('remote preference changes update the existing UI without a duplicate host',()=>{
   const remote={...storage.get('ooo-crew.settings.v1'),theme:'candy',selected:['jake','gunter']};f.listeners.get('ooo-crew.settings.v1')('ooo-crew.settings.v1',null,remote,true);assert.equal(document.getElementById('aseerr-ooo-crew').dataset.theme,'candy');vm.runInContext(script,f.context);assert.equal(document.querySelectorAll('#aseerr-ooo-crew').length,1);
  });
+});
+
+test('field guide checks GitHub metadata, announces one release and opens the manager through a fixed link', async()=>{
+  const {META,INSTALL}=require('../src/updates.js');
+  const header=fs.readFileSync(path.join(__dirname,'../Adventure-Time-Ooo-Crew.meta.js'),'utf8');
+  const requests=[];
+  const f=await fixture({
+    setTimeout(fn,delay){if(delay<500)queueMicrotask(fn);return 1;},
+    GM_xmlhttpRequest(options){requests.push(options);return {abort(){}};}
+  });
+  const flush=()=>new Promise(resolve=>setImmediate(resolve));
+  assert.equal(requests.length,1);
+  assert.equal(requests[0].url,META);
+  const release=version=>header.replace(/(@version\s+)\S+/,(_,field)=>field+version);
+  requests[0].onload({status:200,finalUrl:META,responseText:release('1.10.0')});
+  await flush();
+  assert.match(f.query('.toast').textContent,/1\.10\.0/);
+  f.click('[data-tab="style"]');
+  assert.match(f.query('[data-update-status]').textContent,/1\.10\.0/);
+  assert.equal(f.query('[data-update-link]').getAttribute('href'),INSTALL);
+  f.click('[data-update-check]');
+  await flush();
+  assert.equal(requests.length,2);
+  requests[1].onerror();await flush();
+  assert.match(f.query('[data-update-status]').textContent,/Couldn’t check/);
+  assert.equal(f.query('[data-update-check]').disabled,false);
+  const toggle=f.query('[data-update-auto]');
+  toggle.checked=false;f.fire(toggle,'change');await flush();
+  assert.equal(f.storage.get('ooo-crew.updates.auto'),false);
+  f.storage.delete('ooo-crew.updates.result');
+  f.document.dispatchEvent(new f.window.Event('visibilitychange'));await flush();
+  assert.equal(requests.length,2);
+  f.click('[data-update-check]');await flush();
+  assert.equal(requests.length,3);
+  const current=require('../package.json').version;
+  requests[2].onload({status:200,finalUrl:META,responseText:release(current)});
+  await flush();
+  assert.match(f.query('[data-update-status]').textContent,/latest published/);
 });
