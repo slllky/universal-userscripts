@@ -1,0 +1,113 @@
+{
+  "sources": [
+    {
+      "id": 1,
+      "url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuQN4PKFJQo91vCR5nCcsHcu4mu1WDjhz0eSC_n_mBpSsIh3IIKumZ8-I&s=10",
+      "receivedFile": "sheet-1.jpg",
+      "sha256": "6e5503f254a2b2f6280fe709c9f2e63d65f7e4bcf8a9a35ee6971c2938470042",
+      "dimensions": [
+        562,
+        355
+      ],
+      "used": false,
+      "notes": "Reference only: static Jake transformation collage; no animation frames bundled."
+    },
+    {
+      "id": 2,
+      "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/ac95ec18-9e08-4fed-aca0-30ac8d184ba9/d5nswyw-cf037aac-e562-49d7-8aca-953f2b2d7383.png/v1/fill/w_369,h_256,q_80,strp/adventure_time_game_sprites__by_parrishbroadnax_d5nswyw-fullview.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjU2IiwicGF0aCI6Ii9mL2FjOTVlYzE4LTllMDgtNGZlZC1hY2EwLTMwYWM4ZDE4NGJhOS9kNW5zd3l3LWNmMDM3YWFjLWU1NjItNDlkNy04YWNhLTk1M2YyYjJkNzM4My5wbmciLCJ3aWR0aCI6Ijw9MzY5In1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.tLFhTtow-S-IbCmdEGNyQM4pyNJTfxqZNKcS-M2v9pg",
+      "receivedFile": "sheet-2.jpg",
+      "sha256": "1e4f323e352d18f757e528105f3dad507eeafe4c4d48a5aed4286c535cf5ac15",
+      "dimensions": [
+        369,
+        256
+      ],
+      "used": true,
+      "notes": "Bubblegum and Flame Princess poses; ParrishBroadnax identified in supplied URL."
+    },
+    {
+      "id": 3,
+      "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/93f5c4e4-b50e-4f5b-adbc-be054d6fcd78/dc1i8hx-7ed8f366-3098-483e-bad4-0137bb657d23.png/v1/fit/w_676,h_1800,q_70,strp/marceline_sprites_archive_part_1_by_jarquin10_dc1i8hx-375w-2x.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MjcyNCIsInBhdGgiOiIvZi85M2Y1YzRlNC1iNTBlLTRmNWItYWRiYy1iZTA1NGQ2ZmNkNzgvZGMxaThoeC03ZWQ4ZjM2Ni0zMDk4LTQ4M2UtYmFkNC0wMTM3YmI2NTdkMjMucG5nIiwid2lkdGgiOiI8PTEwMjQifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.BZNEnrrEQEL9b7_GbrHQCqazK4lYISbI_rhYEC8jjcc",
+      "receivedFile": "sheet-3.jpg",
+      "sha256": "ef21fb007cb830fb597fd4dc4ccb7be715ff1258dcca4e73f4a08e4244904ade",
+      "dimensions": [
+        675,
+        1798
+      ],
+      "used": true,
+      "notes": "Optional archive Marceline; Jarquin10 credited in supplied URL and sheet."
+    },
+    {
+      "id": 4,
+      "url": "https://i.pinimg.com/736x/7a/44/51/7a4451ad0c43eb0fdf3f880a094e1d6a.jpg",
+      "receivedFile": "sheet-4.jpg",
+      "sha256": "519ac85f8c9e45f458225129dc02cfb7acbb7b085a3ffff5eecc346d049416e1",
+      "dimensions": [
+        510,
+        546
+      ],
+      "used": true,
+      "notes": "Banana Guard and Candy Corn; source artist not identified in supplied sheet."
+    },
+    {
+      "id": 5,
+      "url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/i/f8f2a5c1-89a2-4667-8933-e54647cd88eb/djka19s-6d2c5446-475b-4cbe-a513-615fee16e5b4.png/v1/fit/w_828,h_1672,q_70,strp/gunter_sprite_sheet_by_popgamer06_djka19s-414w-2x.jpg",
+      "receivedFile": "sheet-5.jpg",
+      "sha256": "b562d7f77838c49a2c157040b70bb8bfcb0a63d9a89431deff40de711c695fc9",
+      "dimensions": [
+        828,
+        1671
+      ],
+      "used": true,
+      "notes": "Gunter; posted by Popgamer06, visible sheet credits Jarquin10 for Nodogon Toontown."
+    },
+    {
+      "id": 6,
+      "url": "https://i.pinimg.com/736x/07/74/be/0774bec7f45de09ae9f0143b664f552c.jpg",
+      "receivedFile": "sheet-6.jpg",
+      "sha256": "c9868cf2a37a34fa676d32864d0319948c043b44418cf5a96883a3b7a5adeaf5",
+      "dimensions": [
+        340,
+        416
+      ],
+      "used": true,
+      "notes": "Lumpy Space Princess; source artist not identified in supplied sheet."
+    },
+    {
+      "id": 7,
+      "url": "https://www.nicepng.com/png/full/736-7366795_adventure-time-marceline-png.png",
+      "receivedFile": "sheet-7.png",
+      "sha256": "d8394fe788f7f9e5fab2b804d477d1f4be119ea6bea364506ede8fa6217c5a8c",
+      "dimensions": [
+        888,
+        889
+      ],
+      "used": true,
+      "notes": "Default cartoon Marceline; source artist not identified in supplied PNG."
+    },
+    {
+      "id": 8,
+      "url": "https://i.pinimg.com/736x/5c/61/ea/5c61ead0e86dc97792643dfe36dfb017.jpg",
+      "receivedFile": "sheet-8.jpg",
+      "sha256": "f1ff31e9fef4754417c3489a04d4693d149283a907a1d99f662abd336f6f870c",
+      "dimensions": [
+        262,
+        568
+      ],
+      "used": true,
+      "notes": "Finn; source artist not identified in supplied sheet."
+    },
+    {
+      "id": "existing-jake",
+      "repository": "slllky/universal-userscripts",
+      "path": "companions/jake/Jake-Stretch-Walker.user.js",
+      "ref": "9979130ffd1a5211fae6dcf274bdda2e1a64f355",
+      "sha256": "00c787206cd76b3b0b0270317859865df617e77f26f489d4b4238f9084b31072",
+      "used": true,
+      "notes": "Original palette/RLE atlas, preserved separately for head/body/feet stretch rendering."
+    }
+  ],
+  "bundled": {
+    "jake.png": "360324b67dde4b20edf98bff9060c135edda689bb278c67fa06a32a5bc5201a0",
+    "crew.png": "1a98f51870ec6228deb2be3826f31e18b01feab0880e06403e445851cbd8b51b"
+  }
+}
