@@ -16,7 +16,7 @@ Aseerr / slllky’s collection of **13 Tampermonkey scripts**, organized by what
 | Category | Script and details | Version | Source / install |
 |---|---|---|---|
 | Browser Companions | [Adventure Time — Ooo Crew](companions/ooo-crew/) | 1.2.0 | [.user.js](companions/ooo-crew/Adventure-Time-Ooo-Crew.user.js) |
-| Browser Companions | [Beat — Browser Skater](companions/beat/) | 3.0.0 | [.user.js](companions/beat/Beat-Browser-Skater.user.js) |
+| Browser Companions | [Beat — Browser Skater](companions/beat/) | 4.0.0 | [.user.js](companions/beat/Beat-Browser-Skater.user.js) |
 | Browser Companions | [Jake — Stretch Walker](companions/jake/) | 2.0.1 | [.user.js](companions/jake/Jake-Stretch-Walker.user.js) |
 | Browser Companions | [Rengoku — Bottom Patrol](companions/rengoku/) | 2.0.0 | [.user.js](companions/rengoku/Rengoku-Bottom-Patrol.user.js) |
 | Browser Companions | [RIFT — Cozy Companion](companions/rift/) | 1.2.0 | [.user.js](companions/rift/RIFT-Cozy-Companion.user.js) |
