@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Beat — Browser Skater
 // @namespace    aseerr-beat-browser-skater
-// @version      3.0.0
-// @description  Seven skaters ride solo and duet combo lines to a fifteen-track pirate radio station.
+// @version      4.0.0
+// @description  Fifteen skaters, crew relays, page exploration and local rivals with fifteen original synth radio tracks.
 // @author       Aseerr customization; classic sprite sheet by xugggys; character by SEGA
 // @match        http://*/*
 // @match        https://*/*

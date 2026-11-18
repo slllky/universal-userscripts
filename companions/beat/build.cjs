@@ -10,7 +10,7 @@ const header = `// ==UserScript==
 // @name         Beat — Browser Skater
 // @namespace    aseerr-beat-browser-skater
 // @version      ${require('./package.json').version}
-// @description  Seven skaters ride solo and duet combo lines to a fifteen-track pirate radio station.
+// @description  Fifteen skaters, crew relays, page exploration and local rivals with fifteen original synth radio tracks.
 // @author       Aseerr customization; classic sprite sheet by xugggys; character by SEGA
 // @match        http://*/*
 // @match        https://*/*
@@ -26,16 +26,16 @@ const header = `// ==UserScript==
 // @updateURL    ${raw}.meta.js
 // @downloadURL  ${raw}.user.js
 // ==/UserScript==`;
-const bundles = Object.fromEntries(['remix','classic','street','gum','combo','yoyo','corn','zero','poison'].map(id => {
+const bundles = Object.fromEntries(['remix','classic','street','gum','combo','yoyo','corn','zero','poison','cube','garam','boogie','rhyth','jazz','clutch','rapid99','noise','parks'].map(id => {
   const base = 'assets/' + id + '/';
   const frames = JSON.parse(read(base + 'frames.json'));
   const png = fs.readFileSync(path.join(dir,base + 'sheet.png'));
   if (png.readUInt32BE(0) !== 0x89504e47) throw Error('Expected PNG for ' + id);
   const entry = {frames,data:png.toString('base64')};
-  if (id !== 'classic' && id !== 'street') entry.portrait = fs.readFileSync(path.join(dir,base+'portrait.png')).toString('base64');
+  if (id !== 'classic' && id !== 'street' && id !== 'parks') entry.portrait = fs.readFileSync(path.join(dir,base+'portrait.png')).toString('base64');
   return [id,entry];
 }));
-const parts = ['engine','pages','audio','draw','panel','app'].map(id => read('src/' + id + '.js'));
+const parts = ['park','engine','pages','audio','draw','tour','geometry','rival','panel','app'].map(id => read('src/' + id + '.js'));
 const app = parts.join('\n')
   .replace('/*BEAT_ART*/null',() => JSON.stringify(bundles))
   .replace('/*BEAT_CSS*/""',() => JSON.stringify(read('src/styles.css')));

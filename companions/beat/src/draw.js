@@ -5,8 +5,8 @@ const BeatDraw = (() => {
   const inks = {lime:'#c0fb33',pink:'#ff549d',cyan:'#48dbde'};
   const stickers = {bolt:0,cat:1,skull:2,can:3};
   const timing = {idle:290,skate:135,boost:105,jump:125,grab:155,grind:140,tag:165,dance:145,land:125,
-    crossover:105,rocket:130,fishbrain:145,wallride:120,spin:95,manual:190};
-  const classicPoses = {crossover:'skate',rocket:'grab',fishbrain:'grind',wallride:'grab',spin:'dance',manual:'grind'};
+    crossover:105,rocket:130,fishbrain:145,wallride:120,spin:95,manual:190,circle:160};
+  const classicPoses = {crossover:'skate',rocket:'grab',fishbrain:'grind',wallride:'grab',spin:'dance',manual:'grind',circle:'dance',makio:'fishbrain',soultransfer:'grind',acid:'grind',unity:'fishbrain',stale:'grab',method:'grab',heelflip:'spin',bio:'spin',rewind:'spin',slalom:'crossover',pivot:'manual',cess:'grind'};
   const cycles = new Set(['skate','idle','dance','grind','boost','crossover','fishbrain','manual']);
   const clamp = (v,lo,hi) => Math.max(lo,Math.min(hi,v));
   const bounded = v => clamp(v,0,1);
@@ -14,15 +14,16 @@ const BeatDraw = (() => {
   const fullCircle = 2*Math.PI;
   function frameFor(actor, meta, gentle) {
     const key = meta.animations[actor.action]?.length ? actor.action : (classicPoses[actor.action] || 'idle');
-    const seq = meta.animations[key];
+    const fallback=classicPoses[key];
+    const seq = meta.animations[key] || meta.animations[fallback] || meta.animations.idle;
     if (!seq?.length) return 0;
     if (gentle) return seq[key==='idle'||key==='skate' ? 0 : Math.floor(seq.length/2)];
     const loops = cycles.has(actor.action);
     const durations = meta.durations?.[key];
     const weighted = Array.isArray(durations) && durations.length===seq.length;
-    const total = weighted ? durations.reduce((sum,n)=>sum+n,0) : seq.length*timing[key];
+    const total = weighted ? durations.reduce((sum,n)=>sum+n,0) : seq.length*(timing[key] || 140);
     const at = loops ? (Math.max(0,actor.elapsed)*1000)%total : bounded(actor.progress)*total;
-    if (!weighted) return seq[Math.min(seq.length-1,Math.floor(at/timing[key]))];
+    if (!weighted) return seq[Math.min(seq.length-1,Math.floor(at/(timing[key] || 140)))];
     let end=0;
     for(let i=0;i<seq.length;i++) { end+=durations[i]; if(at<end)return seq[i]; }
     return seq[seq.length-1];
@@ -31,7 +32,7 @@ const BeatDraw = (() => {
     const meta=asset.frames, n=frameFor(actor,meta,gentle), pivot=meta.pivot||[64,116];
     const cell=meta.cell, b=meta.bounds?.[n] || [0,0,cell,cell];
     const facing=meta.facing ?? 1;
-    const turn=actor.action==='spin' && !gentle ? Math.cos(bounded(actor.progress)*fullCircle) : 1;
+    const turn=['spin','heelflip','bio','rewind'].includes(actor.action) && !gentle ? Math.cos(bounded(actor.progress)*fullCircle) : 1;
     const fold=.49+.51*Math.abs(turn);
     const flip=(actor.direction!==facing)!==(turn<0);
     const top=b[1]-pivot[1],bottom=b[3]-pivot[1];
@@ -279,13 +280,67 @@ const BeatDraw = (() => {
     draw(w) {
       this.clear();
       if(w.settings.hidden)return;
+      const park=this.assets.parks, crop=park?.frames?.districts?.[w.settings.district];
+      if(!['page','park'].includes(w.settings.mode) && crop && park.image){
+        this.region(0,0,w.width,w.height);
+        // Park crops are x,y,width,height, unlike exclusive rider bounds.
+        const [sx,sy,sw,sh]=crop, factor=Math.max(w.width/sw,w.height/sh);
+        const cw=w.width/factor,ch=w.height/factor;
+        this.ctx.drawImage(park.image,sx+(sw-cw)/2,sy+(sh-ch)/2,cw,ch,0,0,w.width,w.height);
+      }
       const accent=inks[w.settings.accent]||inks.lime,level=w.settings.fx;
+      const stereo=()=>{
+      if(w.trick?.id==='circle'){
+        const s=w.scale, x=w.trick.x0-15*s, y=w.trick.y0-47*s;
+        this.region(x-2*s,y-5*s,34*s,25*s);
+        rect(this.ctx,x,y,30*s,18*s,ink);
+        rect(this.ctx,x+2*s,y+2*s,26*s,14*s,'#6a7880');
+        stroke(this.ctx,[[x+8*s,y],[x+8*s,y-4*s],[x+22*s,y-4*s],[x+22*s,y]],ink,2*s);
+        ellipse(this.ctx,x+7*s,y+9*s,5*s,5*s,ink);
+        ellipse(this.ctx,x+23*s,y+9*s,5*s,5*s,ink);
+        rect(this.ctx,x+13*s,y+5*s,4*s,6*s,accent);
+      }
+      };
+      if(w.settings.mode==='park'){
+        const l=(typeof module!=='undefined'&&module.exports?require('./park.js'):BeatPark).layout(w),g=this.ctx;
+        this.region(0,0,w.width,w.height);g.fillStyle='#20313b';g.fillRect(0,0,w.width,w.height);
+        const backdrop=this.assets.parks,crop=backdrop?.frames?.districts?.spool;
+        if(backdrop?.image&&crop){const [sx,sy,sw,sh]=crop;const h=l.top+30,scale=Math.max(w.width/sw,h/sh),cw=w.width/scale,ch=h/scale;g.drawImage(backdrop.image,sx+(sw-cw)/2,sy+(sh-ch)/2,cw,ch,0,0,w.width,h);g.fillStyle='rgba(18,30,39,.25)';g.fillRect(0,0,w.width,l.top+30);}
+        // Hard rear coping and perspective seams distinguish the playable concrete court.
+        g.fillStyle='#15242e';g.fillRect(l.left-29,l.top-29,l.right-l.left+58,l.bottom-l.top+60);
+        const concrete=g.createLinearGradient(l.left,l.top,l.right,l.bottom);concrete.addColorStop(0,'#c0c5a5');concrete.addColorStop(.55,'#9eaea5');concrete.addColorStop(1,'#829a9a');g.fillStyle=concrete;g.fillRect(l.left-24,l.top-24,l.right-l.left+48,l.bottom-l.top+48);
+        // Deterministic small weathering marks: bounded draw count, no random shimmer.
+        for(let i=0;i<100;i++){const x=l.left-16+((i*137)%997)/997*(l.right-l.left+32),y=l.top-14+((i*239)%991)/991*(l.bottom-l.top+28);g.fillStyle=i%3?'rgba(28,54,56,.08)':'rgba(240,240,213,.24)';g.fillRect(x,y,2+i%5,1+i%2);}
+        g.fillStyle='rgba(34,57,64,.10)';g.beginPath();g.moveTo(l.left-24,l.top-24);g.lineTo(l.left+80,l.top-24);g.lineTo(l.left+130,l.bottom+24);g.lineTo(l.left+38,l.bottom+24);g.closePath();g.fill();
+        g.strokeStyle='#7d9290';g.lineWidth=1;
+        for(let i=0;i<=8;i++){const x=l.left+(l.right-l.left)*i/8;g.beginPath();g.moveTo(w.width*.5+(x-w.width*.5)*.75,l.top-24);g.lineTo(x,l.bottom+24);g.stroke();}
+        for(let i=1;i<5;i++){const y=l.top+(l.bottom-l.top)*i/5;g.beginPath();g.moveTo(l.left-24,y);g.lineTo(l.right+24,y);g.stroke();}
+        g.strokeStyle='#e4e9ca';g.lineWidth=3;g.strokeRect(l.left-14,l.top-14,l.right-l.left+28,l.bottom-l.top+28);
+        g.fillStyle='#c5ed43';g.fillRect(l.left-24,l.top-24,l.right-l.left+48,6);
+        // Slotted perimeter drain and worn safety paint, outside the playable footprint.
+        g.fillStyle='#405661';g.fillRect(l.left-20,l.bottom+13,l.right-l.left+40,8);g.fillStyle='#a1b3ae';for(let x=l.left-16;x<l.right+16;x+=19)g.fillRect(x,l.bottom+14,3,6);
+        g.strokeStyle='rgba(238,240,207,.4)';g.lineWidth=2;for(let i=0;i<7;i++){const x=l.left+(l.right-l.left)*(.16+i*.08),y=l.top+(l.bottom-l.top)*.83;g.beginPath();g.ellipse(x,y,19,4,.2,0,Math.PI);g.stroke();}
+        // Raised ledge: visual footprint matches the blocked collision rectangle.
+        for(const b of l.blocks){g.fillStyle='rgba(25,40,44,.3)';g.fillRect(b.x+8,b.y+8,b.width,b.height);const face=g.createLinearGradient(b.x,b.y,b.x,b.y+b.height);face.addColorStop(0,'#658184');face.addColorStop(1,'#354d5c');g.fillStyle=face;g.fillRect(b.x,b.y,b.width,b.height);g.strokeStyle='#2b414b';g.lineWidth=1;for(let y=b.y+22;y<b.y+b.height-6;y+=12){g.beginPath();g.moveTo(b.x,y);g.lineTo(b.x+b.width,y);g.stroke();}for(let x=b.x+22;x<b.x+b.width;x+=31){g.beginPath();g.moveTo(x,b.y+14);g.lineTo(x,b.y+b.height-8);g.stroke();}g.fillStyle='#d0ded0';g.fillRect(b.x,b.y,b.width,Math.min(14,b.height*.3));g.fillStyle='#f0bc4a';for(let x=b.x+8;x<b.x+b.width-8;x+=25)g.fillRect(x,b.y+b.height-7,13,4);}
+        g.strokeStyle='#354c55';g.lineWidth=5;
+        for(const x of [l.rail.left,l.rail.right]){g.beginPath();g.moveTo(x,l.rail.y);g.lineTo(x,l.rail.y+14);g.stroke();}
+        g.strokeStyle='rgba(28,48,58,.22)';g.lineWidth=7;g.beginPath();g.moveTo(l.rail.left+9,l.rail.y+17);g.lineTo(l.rail.right+9,l.rail.y+17);g.stroke();
+        g.strokeStyle='#192c38';g.lineWidth=9;g.beginPath();g.moveTo(l.rail.left,l.rail.y);g.lineTo(l.rail.right,l.rail.y);g.stroke();g.strokeStyle='#dbf6ed';g.lineWidth=4;g.stroke();
+        l.markers.forEach((p,i)=>{const active=i===(w.parkCheckpoint||0);g.fillStyle=active?'#c0fb33':'#516c74';g.beginPath();g.ellipse(p.x,p.y,19,12,0,0,Math.PI*2);g.fill();g.strokeStyle=active?'#eaffab':'#bdcfc7';g.lineWidth=2;g.stroke();g.fillStyle=active?'#162024':'#e0ede2';g.font='bold 14px sans-serif';g.fillText(String(i+1),p.x-4,p.y+5);});
+        g.fillStyle='#162730';g.fillRect(12,12,Math.min(w.width-24,470),62);g.fillStyle='#c0fb33';g.font='bold 18px sans-serif';g.fillText('SPOOL / PRACTICE YARD',24,36,Math.max(1,w.width-48));g.fillStyle='#e8f1db';g.font='12px sans-serif';g.fillText('Laps '+(w.parkLaps||0)+' · Follow 1–4 · Arrow keys · G near rail',24,58,Math.max(1,w.width-48));
+      }
+      const behindStereo=w.trick?.id==='circle' && w.hero.y<w.trick.y0-28*w.scale;
+      if(!behindStereo)stereo();
       if(w.tag)tag(this,w,inks[w.tag.accent]||accent);
       if(w.wall)wall(this,w,accent,level);
       if(w.rail)rail(this,w,accent,level);
       for(const can of w.cans)pickup(this,can,w,accent);
+      if(w.rival)this.drawRider(w.rival,w,'#ff549d',level==='full'?'low':level);
+      if(w.rivalText){const g=this.ctx;g.save();g.font='bold 13px sans-serif';g.fillStyle='#162024';g.fillRect(8,8,Math.min(w.width-16,560),42);g.fillStyle='#fff9d6';g.fillText(w.rivalText,16,34,Math.max(1,w.width-32));g.restore();}
+      if(w.third)this.drawRider(w.third,w,pale,level==='full'?'low':level);
       if(w.partner)this.drawRider(w.partner,w,pale,level==='full'?'low':level);
       this.hitBox=this.drawRider(w.hero,w,accent,level);
+      if(behindStereo)stereo();
       if(this.hitBox)combo(this,w,accent,this.hitBox);
     }
   }

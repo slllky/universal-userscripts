@@ -1,31 +1,32 @@
 // Beat's simulation uses viewport CSS pixels, seconds and a shared skate pivot at (64, 116).
 const BeatEngine = (() => {
+  const Park=typeof module!=='undefined'&&module.exports?require('./park.js'):BeatPark;
   'use strict';
 
   const defaults = Object.freeze({
     mode: 'idle', scale: 1.5, hidden: false, speed: 1, delay: 4, ambient: true,
     interact: true, fx: 'full', motion: 'system', skin: 'remix', accent: 'lime', offset: 4,
-    rider: 'beat', partner: 'auto'
+    rider: 'beat', partner: 'auto', district: 'off', tour:false
   });
   const riders = Object.freeze({
     beat: 'Beat', gum: 'Gum', combo: 'Combo', yoyo: 'Yo-Yo', corn: 'Corn',
-    zero: 'Zero Beat', poison: 'Poison Jam'
+    zero: 'Zero Beat', poison: 'Poison Jam', cube:'Cube', garam:'Garam', boogie:'Boogie', rhyth:'Rhyth', jazz:'Jazz', clutch:'Clutch', rapid99:'Rapid 99', noise:'Noise Tank'
   });
   const signatures = Object.freeze({
     beat: 'needlethread', gum: 'sugarush', combo: 'bassdrop', yoyo: 'yoexchange',
-    corn: 'kernelpanic', zero: 'deadchannel', poison: 'toxicspill'
+    corn: 'kernelpanic', zero: 'deadchannel', poison: 'toxicspill', cube:'nightdrive', garam:'highwire', boogie:'downbeat', rhyth:'stutterstep', jazz:'bluenote', clutch:'scrapyard', rapid99:'ninelives', noise:'feedback'
   });
   const moves = Object.freeze({
     jump: 'Pop hop', grab: 'Mute grab', grind: 'Soul grind', tag: 'Spray tag',
     boost: 'Power stride', dance: 'Dance break', crossover: 'Crossover', rocket: 'Rocket air',
-    fishbrain: 'Fishbrain grind', wallride: 'Wallride', spin: 'Flatspin', manual: 'Toe manual'
+    fishbrain: 'Fishbrain grind', wallride: 'Wallride', spin: 'Flatspin', manual: 'Toe manual', circle:'Boombox Circle',makio:'Makio',soultransfer:'Soul transfer',acid:'Acid grind',unity:'Unity grind',stale:'Stale grab',method:'Method grab',heelflip:'Heel flip',bio:'Bio spin',rewind:'Rewind',slalom:'Slalom',pivot:'Pivot manual',cess:'Cess slide'
   });
   const lines = Object.freeze({
     sidewinder: 'Sidewinder', airmail: 'Air mail', needlethread: 'Needle Thread',
     sugarush: 'Sugar Rush', bassdrop: 'Bass Drop', yoexchange: 'Yo-Yo Exchange',
     kernelpanic: 'Kernel Panic', deadchannel: 'Dead Channel', toxicspill: 'Toxic Spill',
     switchyard: 'Switchyard', skyline: 'Skyline Run', backspin: 'Backspin Broadcast',
-    nightshift: 'Night Shift', lasttrain: 'Last Train', piraterelay: 'Pirate Relay'
+    nightshift: 'Night Shift', lasttrain: 'Last Train', piraterelay: 'Pirate Relay', nightdrive:'Night Drive', highwire:'High Wire', downbeat:'Downbeat Shuffle', stutterstep:'Stutter Step', bluenote:'Blue Note', scrapyard:'Scrapyard Switch', ninelives:'Nine Lives', feedback:'Feedback Loop',crewrelay:'Three-person Crew Relay'
   });
   // Each beat lists its duration, horizontal travel and highest lift in sprite pixels.
   const tricks = {
@@ -40,10 +41,21 @@ const BeatEngine = (() => {
     fishbrain: {seconds: 1.78, travel: 106, lift: 31, points: 215},
     wallride: {seconds: 1.55, travel: 92, lift: 61, points: 205},
     spin: {seconds: 1.18, travel: 59, lift: 37, points: 165},
+    circle: {seconds: 4.4, travel: 0, lift: 0, points: 180},
     manual: {seconds: 1.54, travel: 81, lift: 0, points: 135}
   };
+  for(const [id,kind] of Object.entries({makio:'fishbrain',soultransfer:'grind',acid:'grind',unity:'fishbrain',stale:'grab',method:'grab',heelflip:'spin',bio:'spin',rewind:'spin',slalom:'crossover',pivot:'manual',cess:'grind'}))tricks[id]={...tricks[kind],kind};
   // Timing is authored per line: a setup can be quick while a freeze or a rail lock gets a full beat.
   const scores = {
+    crewrelay: [['boost',.9],['manual',1.2],['grind',1.5],['rocket',1.3],['spin',1.2],['wallride',1.5],['tag',1.3],['dance',1.7]],
+    nightdrive: [['pivot',1.2],['slalom',1.1],['wallride',1.5],['acid',1.6],['rewind',1.2],['tag',1.2],['dance',1.5]],
+    highwire: [['boost',.8],['rocket',1.4],['soultransfer',1.7],['stale',1.2],['makio',1.6],['bio',1.1],['tag',1.2]],
+    downbeat: [['tag',1.4],['pivot',1.2],['slalom',1.1],['unity',1.5],['heelflip',1.2],['method',.8],['dance',1.6]],
+    stutterstep: [['slalom',.8],['pivot',1.3],['boost',.7],['rewind',1.1],['wallride',1.5],['cess',1.6],['tag',1.2]],
+    bluenote: [['manual',1.4],['grind',1.6],['grab',1.3],['crossover',1.1],['spin',1.2],['tag',1.2],['dance',1.8]],
+    scrapyard: [['boost',.8],['wallride',1.5],['grind',1.6],['jump',.8],['manual',1.3],['rocket',1.3],['tag',1.2]],
+    ninelives: [['boost',.7],['crossover',.9],['rocket',1.4],['spin',1.1],['grind',1.5],['fishbrain',1.6],['dance',1.4]],
+    feedback: [['tag',1.2],['manual',1.3],['wallride',1.6],['spin',1.2],['rocket',1.4],['grind',1.5],['dance',1.5]],
     sidewinder: [['boost',.65],['grind',1.42],['jump',.70],['tag',1.05]],
     airmail: [['jump',.75],['grab',1.25],['boost',.72],['dance',1.45]],
     needlethread: [['crossover',.94],['manual',1.24],['grind',1.46],['spin',1.1],['wallride',1.4],['grab',.98],['tag',1.27]],
@@ -66,6 +78,7 @@ const BeatEngine = (() => {
     [id, Object.freeze(beats.map(([move]) => move))])));
   // The partner has a separate part: e.g. on Yo-Yo's jump they cruise underneath, then answer with a spin.
   const partnerScores = {
+    crewrelay: ['manual','spin','jump','grind','rocket','manual','dance','tag'],
     yoexchange: ['manual','crossover','spin','boost','jump','manual','dance'],
     toxicspill: ['grab','crossover','manual','rocket','spin','boost','dance','tag'],
     switchyard: ['manual','jump','boost','spin','rocket','crossover','grab','dance'],
@@ -88,15 +101,16 @@ const BeatEngine = (() => {
     const num = (key, min, max) => bounded(finite(s[key], defaults[key]), min, max);
     const bool = key => typeof s[key] === 'boolean' ? s[key] : defaults[key];
     return {
-      mode: pick(s.mode, ['idle', 'follow'], defaults.mode),
+      mode: pick(s.mode, ['idle', 'follow', 'manual', 'page', 'park'], defaults.mode),
       scale: typeof s.scale === 'string' && s.scale.trim() && Number.isFinite(Number(s.scale))
         ? bounded(Number(s.scale), 1, 3) : num('scale', 1, 3),
-      hidden: bool('hidden'), speed: num('speed', .5, 2), delay: Math.round(num('delay', 1, 8)),
+      hidden: bool('hidden'), tour:bool('tour'), speed: num('speed', .5, 2), delay: Math.round(num('delay', 1, 8)),
       ambient: bool('ambient'), interact: bool('interact'),
       fx: pick(s.fx, ['full', 'low', 'off'], defaults.fx),
       motion: pick(s.motion, ['system', 'full', 'reduced'], defaults.motion),
       skin: pick(s.skin, ['classic', 'remix'], defaults.skin),
       rider: has(riders, s.rider) ? s.rider : defaults.rider,
+      district: pick(s.district, ['off','spool','crane','canal','foundry','signal','terminal'], defaults.district),
       partner: s.partner === 'off' || has(riders, s.partner) ? s.partner : defaults.partner,
       accent: pick(s.accent, inkColors, defaults.accent), offset: Math.round(num('offset', 0, 80))
     };
@@ -109,6 +123,8 @@ const BeatEngine = (() => {
       this.settings = normalize(settings);
       this.random = random;
       this.time = 0;
+      this.controls={x:0,y:0};
+      this.platforms=[];this.pageRoute=null;
       this.systemReduced = false;
       this.width = Math.max(1, finite(width, 1));
       this.height = Math.max(1, finite(height, 1));
@@ -137,7 +153,7 @@ const BeatEngine = (() => {
       this.nextCan = 0;
       this.clearTrail();
     }
-    get scale() { return Math.min(this.settings.scale, this.width / 128, this.height / 128); }
+    get scale() { return Math.min(this.settings.scale, this.width / (this.line?.id==='crewrelay'?384:128), this.height / 128); }
     get ground() { return Math.max(116 * this.scale, this.height - 12 * this.scale - this.settings.offset); }
     get gentle() {
       return this.settings.motion === 'reduced' || (this.settings.motion === 'system' && this.systemReduced);
@@ -179,6 +195,7 @@ const BeatEngine = (() => {
       this.fit(this.width, this.height, oldGround);
       if (was.mode !== next.mode || was.hidden !== next.hidden || was.delay !== next.delay) this.clearTrail();
       if (was.mode !== next.mode || (!was.hidden && next.hidden)) {
+        this.steer(0,0);this.pageRoute=null;
         this.cancelTrick();
         this.tag = this.transit = null;
         this.hero.y = this.ground;
@@ -242,18 +259,23 @@ const BeatEngine = (() => {
     perform(id) {
       if (this.settings.hidden || this.transit || (!has(moves, id) && !has(lines, id))) return false;
       if (this.trick && this.trick.source !== 'ambient') return false;
+      if(this.settings.mode==='park'&&id==='grind'){
+        const rail=Park.layout(this).rail;if(Math.abs(this.hero.y-rail.y)>32||this.hero.x<rail.left-28||this.hero.x>rail.right+28)return false;
+      }
       this.cancelTrick();
       this.ambientAt = this.time + 16;
       if (has(lines, id)) {
         this.startLine(id, 'manual');
       } else {
         this.startTrick(id, 'manual', tricks[id].seconds);
+        if(this.settings.mode==='park'&&id==='grind'){const rail=Park.layout(this).rail;this.trick.parkRail=rail;this.trick.x0=this.hero.direction>0?rail.left:rail.right;this.trick.x1=this.hero.direction>0?rail.right:rail.left;this.trick.y0=rail.y;this.drawTrick();}
       }
       return true;
     }
     cancelTrick() {
       if (this.trick) this.hero.y = this.trick.y0;
-      this.trick = this.rail = this.wall = this.partner = this.line = null;
+      this.trick = this.rail = this.wall = this.partner = this.third = this.line = null;
+      this.hero.x=this.boundX(this.hero.x);this.hero.y=this.boundY(this.hero.y);
       this.pose('idle', 0, 0);
     }
     startLine(id, source) {
@@ -265,6 +287,7 @@ const BeatEngine = (() => {
           this.nextPartner = (this.nextPartner + 1) % peers.length;
         }
       }
+      if(id==='crewrelay')this.line.thirdRider=Object.keys(riders).find(r=>r!==this.settings.rider&&r!==this.partnerRider());
       this.startLineBeat();
     }
     startLineBeat() {
@@ -305,7 +328,7 @@ const BeatEngine = (() => {
     }
     setPartnerRoute() {
       const rider = this.partnerRider();
-      if (!rider) { this.partner = null; return; }
+      if (!rider) { this.partner = this.third = null; return; }
       const t = this.trick, side = t.direction * (this.line.index % 2 === 0 ? 1 : -1);
       const finish = t.id === 'wallride' ? lerp(t.x0, t.x1, .51) : t.x1;
       // When the formation reaches an edge, place the partner on the open side.
@@ -320,7 +343,7 @@ const BeatEngine = (() => {
     }
     drawPartner(p) {
       const t = this.trick, rider = this.partnerRider();
-      if (!rider) { this.partner = null; return; }
+      if (!rider) { this.partner = this.third = null; return; }
       if (!Number.isFinite(t.partnerX0) || !this.partner) this.setPartnerRoute();
       const a = this.partner;
       const id = partnerScores[this.line.id][this.line.index];
@@ -339,6 +362,12 @@ const BeatEngine = (() => {
       a.alpha = this.gentle ? 1 : Math.min(1, this.line.index === 0 ? p * 5 : 1, finalBeat ? (1 - p) * 5 : 1);
       // Two silhouettes completely overlapping on phone slivers would read as one broken sprite.
       if (this.width - 128 * this.scale < 34 * this.scale) a.alpha = 0;
+      if(this.line.id==='crewrelay'){
+        const actor=Object.keys(riders).find(r=>r!==this.settings.rider&&r!==a.rider);
+        this.line.thirdRider=actor;
+        const phase=bounded((p-.24)/.7,0,1),move=['crossover','jump','manual','spin','grind','rocket','tag','dance'][this.line.index];
+        this.third={rider:actor,x:this.boundX(this.width*.78 + (this.gentle?0:Math.sin(p*Math.PI*2)*12*this.scale)),y:this.boundY(this.ground-(this.gentle?0:arc(phase)*(['jump','rocket','spin'].includes(move)?38:0))*this.scale),direction:-a.direction,action:move,elapsed:phase*t.seconds,progress:this.gentle?.5:phase,alpha:a.alpha};
+      }else this.third=null;
     }
     pose(action, elapsed, progress) {
       Object.assign(this.hero, {action, elapsed, progress: bounded(progress, 0, 1)});
@@ -346,14 +375,14 @@ const BeatEngine = (() => {
     drawTrick() {
       const t = this.trick;
       const p = bounded(t.elapsed / t.seconds, 0, 1);
-      const spec = tricks[t.id];
+      const spec = tricks[t.id], kind=spec.kind || t.id;
       let along = p, lift = 0, action = t.id, frame = p;
       this.hero.direction = t.direction;
-      if (['jump','grab','rocket','spin'].includes(t.id)) {
+      if (['jump','grab','rocket','spin'].includes(kind)) {
         if (p < .86) {
           const air = p / .86;
-          lift = spec.lift * (t.id === 'grab' ? Math.sin(Math.PI * air) ** .79 : arc(air));
-          if (t.id === 'rocket') {
+          lift = spec.lift * (kind === 'grab' ? Math.sin(Math.PI * air) ** .79 : arc(air));
+          if (kind === 'rocket') {
             // Snap upward, extend both boots through the apex, then release.
             lift = spec.lift * (air < .38 ? smooth(air / .38) : air < .58 ? 1 : 1 - smooth((air - .58) / .42));
             along = .72 * p + .28 * smooth(p);
@@ -363,7 +392,7 @@ const BeatEngine = (() => {
           action = 'land';
           frame = (p - .86) / .14;
         }
-      } else if (t.id === 'grind' || t.id === 'fishbrain') {
+      } else if (kind === 'grind' || kind === 'fishbrain') {
         const high = Math.min(spec.lift * this.scale, t.y0 - 116 * this.scale);
         this.rail = {
           x1: lerp(t.x0, t.x1, .18), x2: lerp(t.x0, t.x1, .78),
@@ -380,7 +409,7 @@ const BeatEngine = (() => {
           lift = spec.lift * (1 - exit) + 7 * arc(exit);
           action = exit < .72 ? 'jump' : 'land'; frame = exit;
         }
-      } else if (t.id === 'wallride') {
+      } else if (kind === 'wallride') {
         const foot = t.x1 + t.direction * 11 * this.scale;
         this.wall = {
           x: bounded(foot, 0, this.width), y: t.y0, top: Math.max(0, t.y0 - 74 * this.scale),
@@ -401,21 +430,26 @@ const BeatEngine = (() => {
           this.hero.direction = -t.direction;
           action = exit < .8 ? 'jump' : 'land'; frame = exit;
         }
-      } else if (t.id === 'crossover') {
+      } else if (kind === 'crossover') {
         // Four weight transfers from skate to skate, each followed by a longer glide.
         along = p - .026 * Math.sin(p * Math.PI * 4);
         lift = spec.lift * Math.sin(p * Math.PI * 2) ** 2;
-      } else if (t.id === 'manual') {
+      } else if (kind === 'manual') {
         along = .7 * p + .3 * (1 - (1 - p) ** 2);
-      } else if (t.id === 'boost') {
+      } else if (kind === 'boost') {
         along = smooth(p);
-      } else if (t.id === 'tag' && this.tag) {
+      } else if (kind === 'tag' && this.tag) {
         this.tag.progress = bounded((p - .14) / .70, 0, 1);
-      } else if (t.id === 'dance') {
+      } else if (kind === 'dance') {
         frame = (t.elapsed / .95) % 1;
       }
       this.hero.x = this.boundX(this.gentle ? t.x0 : lerp(t.x0, t.x1, along));
       this.hero.y = this.boundY(t.y0 - (this.gentle ? 0 : lift) * this.scale);
+      if(kind === 'circle' && !this.gentle){
+        this.hero.x=this.boundX(t.x0 + Math.sin(p*Math.PI*2)*55*this.scale);
+        this.hero.y=this.boundY(t.y0 - (1-Math.cos(p*Math.PI*2))*28*this.scale);
+        this.hero.direction=Math.cos(p*Math.PI*2)<0 ? -t.direction:t.direction;
+      }
       if (this.gentle) {
         action = t.id;
         frame = .5;
@@ -427,6 +461,7 @@ const BeatEngine = (() => {
         }
         if (this.wall) this.wall.x = bounded(this.hero.x + 11 * this.scale * t.direction, 0, this.width);
       }
+      if(t.parkRail){this.hero.y=t.parkRail.y;this.rail={x1:t.parkRail.left,x2:t.parkRail.right,y:t.parkRail.y,alpha:1};action='grind';}
       this.pose(action, t.elapsed, frame);
       if (this.line && has(partnerScores, this.line.id)) this.drawPartner(p);
     }
@@ -457,7 +492,7 @@ const BeatEngine = (() => {
       if (t.id === 'tag' && this.tag) {
         this.tag.progress = 1;
         this.tag.age = 0;
-        this.signal('tag');
+        this.signal('tag',{source:t.source});
       }
       if (['jump','grab','grind','rocket','spin','fishbrain','wallride'].includes(t.id)) this.signal('land');
       if (t.source !== 'ambient') this.award(tricks[t.id].points, 'trick', t.id);
@@ -474,7 +509,8 @@ const BeatEngine = (() => {
             this.ambientAt = this.time + 5 + this.random() * 4;
           }
           this.line = null;
-          this.partner = null;
+          this.hero.x=this.boundX(this.hero.x);this.hero.y=this.boundY(this.hero.y);
+          this.partner = this.third = null;
         }
       }
     }
@@ -499,6 +535,46 @@ const BeatEngine = (() => {
         this.trail.shift();
       }
       return moving;
+    }
+    setPlatforms(items){
+      const next=(Array.isArray(items)?items:[]).slice(0,16).filter(p=>p&&[p.left,p.right,p.y].every(Number.isFinite)&&p.right>p.left).map(p=>({left:this.boundX(p.left),right:this.boundX(p.right),y:this.boundY(p.y)}));
+      if(JSON.stringify(next)!==JSON.stringify(this.platforms)){this.platforms=next;this.pageRoute=null;}
+    }
+    roam(dt){
+      if(this.gentle){this.pose('idle',this.time,.5);return;}
+      if(!this.platforms.length){const moving=this.street(dt);this.pose(moving?'skate':'idle',this.time,moving?(this.time/.69)%1:0);return;}
+      const h=this.hero;
+      if(!this.pageRoute){
+        const candidates=this.platforms.filter(p=>Math.abs(p.y-h.y)>8||h.x<p.left||h.x>p.right);
+        const pool=candidates.length?candidates:this.platforms;
+        const p=pool[Math.min(pool.length-1,Math.floor(this.random()*pool.length))];
+        const destination=h.direction>0?p.left:p.right;
+        this.pageRoute={elapsed:0,x0:h.x,y0:h.y,x1:destination,y1:p.y,end:h.direction>0?p.right:p.left};
+      }
+      const r=this.pageRoute;r.elapsed+=dt*this.settings.speed;
+      if(r.elapsed<1.4){
+        const t=r.elapsed/1.4;
+        h.x=this.boundX(lerp(r.x0,r.x1,smooth(t)));h.y=this.boundY(lerp(r.y0,r.y1,smooth(t))-(this.gentle?0:28*this.scale*arc(t)));
+        if(Math.abs(r.x1-r.x0)>1)h.direction=r.x1>r.x0?1:-1;
+        this.pose(this.gentle?'idle':'jump',r.elapsed,this.gentle?.5:t);
+      }else{
+        const t=Math.min(1,(r.elapsed-1.4)/2.4);
+        h.x=this.boundX(lerp(r.x1,r.end,t));h.y=this.boundY(r.y1);h.direction=r.end>=r.x1?1:-1;
+        this.pose(this.gentle?'idle':'skate',r.elapsed,this.gentle?.5:(r.elapsed/.69)%1);
+        if(t===1)this.pageRoute=null;
+      }
+    }
+    steer(x,y) {
+      this.controls={x:bounded(finite(x,0),-1,1),y:bounded(finite(y,0),-1,1)};
+    }
+    manual(dt) {
+      const {x,y}=this.controls,n=Math.hypot(x,y);
+      if(!n)return false;
+      const h=this.hero, step=180*this.settings.speed*dt/Math.max(1,n);
+      const beforeX=h.x,beforeY=h.y;
+      if(this.settings.mode==='park')Park.move(this,this.boundX(h.x+x*step),this.boundY(h.y+y*step));else{h.x=this.boundX(h.x+x*step);h.y=this.boundY(h.y+y*step);}
+      if(x)h.direction=x<0?-1:1;
+      return h.x!==beforeX||h.y!==beforeY;
     }
     street(dt) {
       const h = this.hero;
@@ -595,11 +671,13 @@ const BeatEngine = (() => {
       } else if (this.settings.mode === 'idle' && this.settings.ambient && !this.gentle && this.time >= this.ambientAt) {
         this.ambient();
       } else {
-        const moving = this.settings.mode === 'follow' ? this.follow(dt) : this.street(dt);
+        if(this.settings.mode==='page'){this.roam(dt);this.updateCans(dt);return;}
+        const moving = this.settings.mode === 'follow' ? this.follow(dt) : ['manual','park'].includes(this.settings.mode) ? this.manual(dt) : this.street(dt);
         const action = moving ? 'skate' : 'idle';
         const elapsed = h.action === action ? h.elapsed + dt * this.settings.speed : 0;
         this.pose(action, elapsed, this.gentle ? .5 : (elapsed / (moving ? .69 : 1.5)) % 1);
       }
+      if(this.settings.mode==='park')Park.tick(this);
       this.updateCans(dt);
     }
     step(seconds) {
@@ -634,8 +712,8 @@ const BeatEngine = (() => {
     restore(saved) {
       if (!saved || saved.version !== 1) { this.clearTrail(); return false; }
       this.clearTrail();
-      this.events.length = 0;
-      this.trick = this.line = this.rail = this.wall = this.partner = this.tag = this.transit = null;
+      this.events.length = 0;this.platforms=[];this.pageRoute=null;
+      this.trick = this.line = this.rail = this.wall = this.partner = this.third = this.tag = this.transit = null;
       this.setBest(saved.best);
       this.tagCount = cleanScore(saved.tagCount);
       const c = saved.combo || {};

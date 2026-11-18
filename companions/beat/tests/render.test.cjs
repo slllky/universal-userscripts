@@ -6,7 +6,7 @@ const {createCanvas,loadImage}=require('@napi-rs/canvas');
 const {Renderer,frameFor,geometry}=require('../src/draw.js');
 const {World,riders,lines,duets}=require('../src/engine.js');
 const assetsRoot=path.resolve(__dirname,'../assets');
-const riderAtlases=['remix','classic','gum','combo','yoyo','corn','zero','poison'];
+const riderAtlases=['remix','classic','gum','combo','yoyo','corn','zero','poison','cube','garam','boogie','rhyth','jazz','clutch','rapid99','noise'];
 const assetsPromise=Promise.all([...riderAtlases,'street'].map(async key=>{
   const dir=path.join(assetsRoot,key);
   return [key,{frames:require(path.join(dir,'frames.json')),image:await loadImage(path.join(dir,'sheet.png'))}];
@@ -149,4 +149,11 @@ test('each rider can complete the automatic Free Skate deck and all five reduced
       assert.ok(b.x>=-.5&&b.x+b.width<=calm.width+.5&&b.y>=-.5&&b.y+b.height<=calm.height+.5);
     }
   }
+});
+test('page exploration renders transparent with saved park and restores park outside page mode',async()=>{
+ const assets={...await assetsPromise,parks:{frames:require('../assets/parks/frames.json'),image:await loadImage(path.join(assetsRoot,'parks/sheet.png'))}};
+ const w=new World({district:'spool',mode:'page',ambient:false},800,600),c=createCanvas(800,600),r=new Renderer(c.getContext('2d'),assets);r.draw(w);assert.equal(c.getContext('2d').getImageData(5,5,1,1).data[3],0);w.apply({mode:'idle'});r.draw(w);assert.equal(c.getContext('2d').getImageData(5,5,1,1).data[3],255);assert.equal(w.settings.district,'spool');
+});
+test('2.0 parity: Classic selection routes Beat to classic atlas, without replacing other riders',async()=>{
+ const assets=await assetsPromise,w=new World({rider:'beat',skin:'classic'},800,600),r=new Renderer(createCanvas(800,600).getContext('2d'),assets);assert.equal(r.assetFor(w.hero,w),assets.classic);w.apply({skin:'remix'});assert.equal(r.assetFor(w.hero,w),assets.remix);w.apply({rider:'gum',skin:'classic'});assert.equal(r.assetFor(w.hero,w),assets.gum);
 });

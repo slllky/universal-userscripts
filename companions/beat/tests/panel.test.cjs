@@ -131,7 +131,7 @@ test('breakbeat starts silent, its transport follows actual playback, and volume
 test('selecting a portrait features the skater, changes the one-touch signature and filters duet partners',() => {
   const {get,panel,changes,moves,fire} = mount();
   const roster = get('.bt-roster');
-  assert.equal(roster.querySelectorAll('input').length,7);
+  assert.equal(roster.querySelectorAll('input').length,15);
   const portrait = 'data:image/png;base64,AA==';
   panel.portraits({gum:portrait});
   assert.equal(get('[data-rider=gum] img').getAttribute('src'),portrait);

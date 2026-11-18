@@ -6,7 +6,7 @@
   const prefix = 'beat-skater-v1:';
   const shared = !BEAT_PREVIEW && typeof GM_getValue === 'function' && typeof GM_setValue === 'function';
   const fallback = new Map();
-  const persistentKeys = new Set(['settings','best-v2','volume-v2','track-v3','order-v3']);
+  const persistentKeys = new Set(['settings','best-v2','volume-v2','track-v3','order-v3','tour-v4','arrangement-v4']);
   function read(key, initial) {
     try {
       if (shared) return GM_getValue(prefix + key, initial);
@@ -42,7 +42,7 @@
   const style = document.createElement('style');
   style.textContent = sheetCSS + '\n.beat-stage,.beat-hit{position:absolute;top:0;left:0;margin:0}.beat-stage{pointer-events:none}.beat-hit{pointer-events:auto;cursor:pointer;background:transparent;color:inherit;border:none;border-radius:12px;padding:0;touch-action:manipulation}.beat-hit:focus-visible{outline:2px dashed #bbff31;outline-offset:2px}.beat-stage[hidden],.beat-hit[hidden]{display:none!important}@media print{:host{display:none!important}}';
   const canvas = document.createElement('canvas');
-  canvas.className = 'beat-stage'; canvas.hidden = true; canvas.setAttribute('aria-hidden','true');
+  canvas.className = 'beat-stage'; canvas.tabIndex=0;canvas.setAttribute('role','application');canvas.setAttribute('aria-label','Manual skater: arrow keys to move, Space to jump, G to grind, T to tag'); canvas.hidden = true; canvas.setAttribute('aria-hidden','true');
   const hit = document.createElement('button');
   hit.className = 'beat-hit'; hit.type = 'button'; hit.hidden = true;
   hit.title = 'Beat · Click to dance, right-click for the radio';
@@ -52,6 +52,9 @@
 
   const world = new BeatEngine.World(BeatEngine.normalize(read('settings', {})));
   world.setBest(read('best-v2', 0));
+  const heldKeys=new Set();
+  let geometryAt=0, rivalMatch=null;
+  let tourState=BeatTour.normalize(read('tour-v4',null));
   const media = window.matchMedia('(prefers-reduced-motion: reduce)');
   world.setReduced(media.matches);
   const ctx = canvas.getContext('2d');
@@ -66,6 +69,7 @@
     panel.station(track,order);
     if (read('track-v3','curbside') !== track.id) write('track-v3',track.id);
   }});
+  radio.setArrangement(read('arrangement-v4','original'));
   radio.select(read('track-v3','curbside')); radio.setOrder(order);
   function validOrder(value) { return ['loop','sequence','shuffle'].includes(value) ? value : 'sequence'; }
   function changeOrder(value, persist) {
@@ -82,10 +86,30 @@
     settings:world.settings, moves:BeatEngine.moves, lines:BeatEngine.lines,
     tracks:BeatAudio.tracks, portraits, riders:BeatEngine.riders, signatures:BeatEngine.signatures,
     lineMoves:BeatEngine.lineMoves, duets:BeatEngine.duets,
+    onArrangement:value=>{const chosen=radio.setArrangement(value);write('arrangement-v4',chosen);panel.arrangement(chosen);},
     onTrack:id => radio.select(id), onStationStep:direction => direction < 0 ? radio.previous() : radio.next(),
     onOrder:mode => changeOrder(mode,true),
-    onChange:patch => apply({...read('settings', world.settings), ...patch}, true),
+    onChange:patch => apply({...read('settings', world.settings), ...patch,...(patch.mode==='park'?{tour:false,ambient:false}:{}),...('district' in patch?{tour:false}:{})}, true),
     onRadio:toggleRadio, onVolume:value => { applyVolume(value); write('volume-v2',volume); },
+    onPad:direction=>{
+      if(!['manual','park'].includes(world.settings.mode))apply({...world.settings,mode:'manual'},true);
+      const v={up:[0,-1],left:[-1,0],down:[0,1],right:[1,0]}[direction];
+      if(!v||world.settings.hidden||world.trick)return;
+      resetControls();world.steer(...v);world.manual(.1);world.steer(0,0);paint();
+    },
+    onSteer:()=>{apply({...world.settings,mode:world.settings.mode==='park'?'park':'manual'},true);panel.close();canvas.focus();},
+    onRival:(crew=false)=>{
+      if(rivalMatch?.active){rivalMatch=null;world.rival=null;world.rivalText='';panel.rival('Exhibition stopped.');return;}
+      world.cancelTrick();world.bank();processEvents();
+      const d=BeatTour.districts.find(d=>d.id===world.settings.district);
+      const preferred=Object.keys(BeatEngine.riders).find(id=>BeatEngine.riders[id]===d?.rival);
+      const rider=preferred&&preferred!==world.settings.rider?preferred:Object.keys(BeatEngine.riders).find(id=>id!==world.settings.rider);
+      rivalMatch=new BeatRival.Match(BeatEngine,world,rider,crew);
+      rivalMatch.district=world.settings.tour?world.settings.district:null;
+      apply({...world.settings,mode:'manual',ambient:false},true);panel.close();canvas.focus();
+    },
+    onTourStart:()=>enterTour(BeatTour.first(tourState)), onTourNext:nextDistrict,
+    onTourStop:()=>{apply({...world.settings,tour:false,district:'off'},true);tourPanel();},
     onMove:perform, onJump:() => pages ? pages.jump() : 'Loading Beat…'
   });
   let playing = false;
@@ -111,8 +135,22 @@
     } catch { if (audioEpoch === epoch) { quietRadio(); panel.status('Audio is unavailable on this page'); } }
   }
   applyVolume(volume);
-  panel.station(radio.current(),order);
+  panel.station(radio.current(),order);panel.arrangement(radio.arrangement().queued);
   syncActorLabel();
+  function tourPanel(){
+    const id=world.settings.tour?world.settings.district:null;
+    panel.tour(BeatTour.describe(tourState,id),!!id&&id!=='terminal'&&BeatTour.complete(tourState,id));
+  }
+  function enterTour(id){
+    if(!BeatTour.unlocked(tourState,id))return;
+    world.cancelTrick();world.bank();processEvents();
+    apply({...world.settings,tour:true,district:id,mode:'manual',ambient:false},true);tourPanel();
+  }
+  function nextDistrict(){
+    const i=BeatTour.districts.findIndex(d=>d.id===world.settings.district);
+    if(world.settings.tour&&i>=0&&i<5&&BeatTour.complete(tourState,world.settings.district))enterTour(BeatTour.districts[i+1].id);
+  }
+  tourPanel();
   function syncActorLabel() {
     const label = BeatEngine.riders[world.settings.rider] || 'Beat';
     hit.title = label + ' · Click to dance, right-click for Beat FM';
@@ -120,9 +158,13 @@
   }
   function apply(settings, persist) {
     const wasHidden = world.settings.hidden;
+    if(rivalMatch && ((settings?.district && settings.district!==world.settings.district)||(settings?.rider && settings.rider!==world.settings.rider))){rivalMatch=null;world.rival=null;world.rivalText='';panel.rival('Exhibition ended after changing rider or district.');}
+    if(settings?.mode!==world.settings.mode || settings?.hidden)resetControls();
     world.apply(BeatEngine.normalize(settings || {}));
+    geometryAt=0;if(world.settings.mode!=='page')world.setPlatforms([]);
     if (persist) write('settings', {...world.settings});
-    panel.sync(world.settings); syncActorLabel(); scorePanel();
+    canvas.setAttribute('aria-hidden',['manual','park'].includes(world.settings.mode)?'false':'true');
+    panel.sync(world.settings); syncActorLabel(); scorePanel();tourPanel();
     if (view && wasHidden !== world.settings.hidden) {
       if (world.settings.hidden) pages.stop();
       else pages.start();
@@ -175,6 +217,12 @@
   }
   function processEvents() {
     for (const event of world.takeEvents()) {
+      rivalMatch?.event(event);
+      if(world.settings.tour && ['tag','pickup','bank','trick','line'].includes(event.type)){
+        tourState=BeatTour.merge(tourState,read('tour-v4',null));
+        tourState=BeatTour.record(tourState,world.settings.district,event);
+        write('tour-v4',tourState);tourPanel();
+      }
       if (playing) radio.accent(event);
       if (event.type === 'best') {
         const best = Math.max(event.score, Number(read('best-v2',0)) || 0);
@@ -189,7 +237,18 @@
     if (!hasStage()) { updateLoop(); return; }
     if (frameTime === null || now-frameTime >= 1000/40-1) {
       const dt = frameTime === null ? 0 : Math.min(.08, (now-frameTime)/1000);
-      frameTime = now; world.step(dt); processEvents(); paint();
+      frameTime = now;
+      if(world.settings.mode==='page'&&now>=geometryAt){
+        world.setPlatforms(BeatGeometry.scan(document,host,width,height,world.scale));geometryAt=now+1000;
+      }
+      world.step(dt); processEvents();
+      if(rivalMatch){rivalMatch.step(dt,world);world.rival=rivalMatch.actor;world.rivalText=rivalMatch.text;panel.rival(rivalMatch.text);
+        if(!rivalMatch.active&&!rivalMatch.recorded){
+          rivalMatch.recorded=true;
+          if(rivalMatch.district&&world.settings.tour&&world.settings.district===rivalMatch.district){tourState=BeatTour.merge(tourState,read('tour-v4',null));tourState=BeatTour.record(tourState,rivalMatch.district,rivalMatch.result());write('tour-v4',tourState);tourPanel();}
+        }
+      }
+      paint();
     }
     raf = requestAnimationFrame(tick);
   }
@@ -247,12 +306,27 @@
       world.point(event.clientX,event.clientY);
     }
   }, {passive:true});
-  listen(window,'blur',quietRadio);
+  function resetControls(){heldKeys.clear();world.steer(0,0);}
+  function steering(){world.steer(Number(heldKeys.has('ArrowRight'))-Number(heldKeys.has('ArrowLeft')),Number(heldKeys.has('ArrowDown'))-Number(heldKeys.has('ArrowUp')));}
+  function manualKey(event){
+    if(!hasStage()||!['manual','park'].includes(world.settings.mode)||event.altKey||event.ctrlKey||event.metaKey)return;
+    const target=event.composedPath?.()[0]||event.target;
+    if(target?.isContentEditable || target?.closest?.('input,textarea,select,button,[contenteditable]:not([contenteditable="false"]),[role="textbox"]')||(event.composedPath?.().includes(host)&&target!==canvas))return;
+    const move={Space:'jump',KeyG:'grind',KeyT:'tag'}[event.code];
+    if(event.key?.startsWith('Arrow')){event.preventDefault();heldKeys.add(event.key);steering();}
+    else if(move){event.preventDefault();if(!event.repeat)perform(move);}
+  }
+  // Closed shadow roots retarget document events to the host, so listen inside too.
+  listen(root,'keydown',manualKey);
+  listen(document,'focusin',event=>{const target=event.composedPath?.()[0]||event.target;if(target?.isContentEditable||target?.closest?.('input,textarea,select,button,[contenteditable]:not([contenteditable="false"]),[role="textbox"]'))resetControls();});
+  listen(document,'keydown',manualKey);
+  listen(document,'keyup',event=>{if(heldKeys.delete(event.key))steering();});
+  listen(window,'blur',()=>{resetControls();quietRadio();});
   listen(window,'resize',resize);
   listen(window.visualViewport,'resize',resize);
   listen(media,'change',event => { world.setReduced(event.matches); paint(); });
   function visibility() {
-    if (document.hidden || document.fullscreenElement) { world.clearTrail(); quietRadio(); }
+    if (document.hidden || document.fullscreenElement) { resetControls();world.clearTrail(); quietRadio(); }
     updateLoop();
   }
   listen(document,'visibilitychange',visibility);
@@ -270,7 +344,7 @@
       panel.destroy(); host.remove();
     }
   });
-  cleanup.push(watch('settings',value => apply(value,false)), watch('volume-v2',applyVolume),
+  cleanup.push(watch('arrangement-v4',value=>panel.arrangement(radio.setArrangement(value))),watch('tour-v4',value=>{tourState=BeatTour.merge(tourState,value);tourPanel();}),watch('settings',value => apply(value,false)), watch('volume-v2',applyVolume),
     watch('track-v3',value => radio.select(value)), watch('order-v3',value => changeOrder(value,false)),
     watch('best-v2',value => { world.setBest(Math.max(world.best, Number(value) || 0)); scorePanel(); }));
   if (!BEAT_PREVIEW && typeof GM_registerMenuCommand === 'function') {

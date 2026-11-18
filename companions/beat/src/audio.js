@@ -186,7 +186,8 @@ const BeatAudio = (() => {
 
   function create(win, options = {}) {
     let station = null, volume = .35, selected = 0, order = 'sequence';
-    let shuffleBag = [], history = [];
+    let shuffleBag = [], history = [], arrangement='original', pendingArrangement='original';
+    const arrangements=['original','breaks','dub','peak'];
     function voice(s, source, filter, at, duration, level, attack = .004, sustain = 0) {
       const envelope = s.ctx.createGain();
       const nodes = filter ? [source, filter, envelope] : [source, envelope];
@@ -312,11 +313,12 @@ const BeatAudio = (() => {
       const song = scores[selected];
       const unit = 60 / song.bpm / 4;
       const bar = Math.floor(s.step / 16), index = s.step % 32, beat = index % 16;
-      const section = song.form[Math.floor(bar / 4)], hook = section === 'B' || section === 'F';
+      if(beat===0) arrangement=pendingArrangement;
+      const section = arrangement==='dub'?'D':arrangement==='peak'?'B':song.form[Math.floor(bar / 4)], hook = section === 'B' || section === 'F';
       const harmony = song.changes[(hook ? 4 : 0) + (bar + (section === 'D' ? 2 : 0)) % 4];
       const nudged = at + (index % 2 ? unit * song.swing : 0);
       const closing = bar === song.bars - 1;
-      if (closing && beat >= 12) {
+      if (arrangement==='original' && closing && beat >= 12) {
         if (beat === 12) {
           instrument(s,song.instruments[0],song.key,nudged,unit * 3,.8);
           instrument(s,song.instruments[2],song.key + 24,nudged,unit * 3.4,.67);
@@ -324,6 +326,8 @@ const BeatAudio = (() => {
         return;
       }
       drums(s,song,section,bar,index,nudged);
+      if(arrangement==='breaks')return;
+      if(arrangement==='peak'&&beat===15)hiss(s,nudged,1800,.075,.08,'bandpass',3400);
       const bass = song.bass.get(index);
       if (bass && (section !== 'D' || beat % 4 === 0)) {
         const filter = song.id === 'boiler' ? .72 + .1 * (bar % 6) + .06 * beat : 1;
@@ -481,7 +485,10 @@ const BeatAudio = (() => {
     }
 
     return {
-      toggle, stop, setVolume, accent, current: () => tracks[selected],
+      toggle, stop, setVolume, accent,
+      setArrangement(value){if(arrangements.includes(value)){pendingArrangement=value;if(!station)arrangement=value;}return pendingArrangement;},
+      arrangement:()=>({active:arrangement,queued:pendingArrangement}),
+      current: () => tracks[selected],
       select(id) {
         const index = tracks.findIndex(track => track.id === id);
         if (index >= 0 && index !== selected) { shuffleBag = []; return change(index,true); }

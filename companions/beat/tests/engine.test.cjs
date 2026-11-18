@@ -215,7 +215,7 @@ test('all fifteen authored lines play their advertised sequence, restore mid-lin
     sequences.push(ids.join('/'));
     a.step(5); b.step(5); assert.equal(a.best, b.best); assert.ok(b.best > 600);
   }
-  assert.equal(new Set(sequences).size, 15);
+  assert.equal(new Set(sequences).size, 24);
 });
 
 test('gentle mode is stationary on the street, freezes manual poses and suppresses ambient stunts', () => {
@@ -266,9 +266,9 @@ test('malformed saves cannot introduce unknown choreography or invalid positions
 });
 
 test('the seven leads open Free Skate with their own signature and give the first complementary spot to a fresh line', () => {
-  assert.equal(Object.keys(riders).length, 7);
-  assert.equal(Object.keys(moves).length, 12);
-  assert.equal(new Set(Object.values(signatures)).size, 7);
+  assert.equal(Object.keys(riders).length, 15);
+  assert.equal(Object.keys(moves).length, 25);
+  assert.equal(new Set(Object.values(signatures)).size, 15);
   for (const rider of Object.keys(riders)) {
     const w = world({ambient:true, rider});
     w.step(4.1);
@@ -292,7 +292,7 @@ test('the seven leads open Free Skate with their own signature and give the firs
 test('ambient plays fifteen lines before recycling, rotates all six partners across a tab transfer, and leaves scoring to the player', () => {
   let w = world({ambient:true});
   const lineup = [], partners = [];
-  for (let i = 0; i < 1500 && (lineup.length < 16 || partners.length < 7); i++) {
+  for (let i = 0; i < 10000 && (lineup.length < 25 || partners.length < 15); i++) {
     w.step(.25);
     if (w.line && w.line.id !== lineup.at(-1)) {
       lineup.push(w.line.id);
@@ -306,10 +306,10 @@ test('ambient plays fifteen lines before recycling, rotates all six partners acr
       }
     }
   }
-  assert.equal(new Set(lineup.slice(0,15)).size,15);
-  assert.notEqual(lineup[14],lineup[15]);
-  assert.equal(new Set(partners.slice(0,6)).size,6);
-  assert.equal(partners[0],partners[6]); assert.ok(!partners.includes('beat'));
+  assert.equal(new Set(lineup.slice(0,24)).size,24);
+  assert.notEqual(lineup[23],lineup[24]);
+  assert.equal(new Set(partners.slice(0,14)).size,14);
+  assert.equal(partners[0],partners[14]); assert.ok(!partners.includes('beat'));
   assert.equal(w.best,0); assert.equal(w.combo.count,0);
   assert.ok(w.perform('spin')); assert.equal(w.line,null); assert.equal(w.partner,null);
   w.step(1.3); assert.equal(w.combo.score,165);
@@ -376,4 +376,7 @@ test('2.x sessions resume legacy singles and legacy sidewinder saves, and saved 
   assert.notEqual(next.trick.x0,next.trick.x1);
   assert.notEqual(next.trick.partnerX0,next.trick.partnerX1);
   assert.equal(next.cans.length,0); near(next.hero.y, next.ground, 8);
+});
+test('2.0 parity: adjustable size and speed affect actual movement while four-second chase stays default',()=>{
+ assert.equal(defaults.delay,4);const slow=world({mode:'manual',speed:.5,scale:1}),fast=world({mode:'manual',speed:2,scale:2});slow.hero.x=fast.hero.x=300;slow.steer(1,0);fast.steer(1,0);slow.step(.5);fast.step(.5);near(fast.hero.x-300,4*(slow.hero.x-300));assert.equal(slow.scale,1);assert.equal(fast.scale,2);const snap=fast.snapshot(),next=world({mode:'manual',speed:2,scale:2},1200,700);assert.equal(next.restore(snap),true);assert.deepEqual(next.combo,fast.combo);
 });

@@ -200,3 +200,9 @@ test('silent track choices, ordered navigation, shuffle cycle, and automatic tem
   assert.equal(h.contexts.length,count,'manual tuning keeps one AudioContext');
   radio.stop();
 });
+test('DJ changes are queued to bar boundaries, reject bad values, and require playback gesture',async()=>{
+ const h=hardware(),r=BeatAudio.create(h.win);assert.equal(r.setArrangement('dub'),'dub');assert.equal(h.contexts.length,0);assert.equal(r.setArrangement('bad'),'dub');await r.toggle();h.tick(.05);r.setArrangement('breaks');assert.equal(r.arrangement().active,'dub');assert.equal(r.arrangement().queued,'breaks');h.tick(.3);assert.equal(r.arrangement().active,'dub');for(let t=.35;t<2.4;t+=.05)h.tick(t);assert.equal(r.arrangement().active,'breaks');r.stop();assert.equal(h.timers.size,0);
+});
+test('DJ variants change actual scheduled voices while all fifteen track identities remain intact',async()=>{
+ const counts=[];for(const mix of ['original','breaks','dub','peak']){const h=hardware(),r=BeatAudio.create(h.win);r.select('wisteria');r.setArrangement(mix);await r.toggle();for(let t=.05;t<24;t+=.05)h.tick(t);counts.push(h.contexts[0].sources.length);assert.equal(r.current().id,'wisteria');r.stop();}assert.equal(new Set(counts).size,4);assert.equal(BeatAudio.tracks.length,15);
+});

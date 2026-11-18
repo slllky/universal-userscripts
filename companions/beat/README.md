@@ -1,8 +1,8 @@
 # Beat — Browser Skater
 
-**Version 3.0.0** · [Install or update in Tampermonkey](https://raw.githubusercontent.com/slllky/universal-userscripts/main/companions/beat/Beat-Browser-Skater.user.js) · [Hear the station sampler](docs/beat-fm-sampler.mp3)
+**Version 4.0.0** · [Install or update in Tampermonkey](https://raw.githubusercontent.com/slllky/universal-userscripts/main/companions/beat/Beat-Browser-Skater.user.js) · [Hear the station sampler](docs/beat-fm-sampler.mp3)
 
-![Seven skaters performing their signatures in Free Skate](docs/beat-motion.gif)
+![Previous seven-rider release preview](docs/beat-motion.gif)
 
 Open the bottom-left cassette and pick **Yo-Yo** under **Crew**. Set his duet partner to **Corn**, leave **Free skate** and **Auto combos in Free skate** on, and give them four seconds. Yo-Yo opens with a crossover while Corn answers with a toe manual. The pair trade parts until they finish the seven-step Yo-Yo Exchange. The live card shows the performers and current step.
 
@@ -17,8 +17,16 @@ Open the bottom-left cassette and pick **Yo-Yo** under **Crew**. Set his duet pa
 | Corn | Kernel Panic |
 | Zero Beat | Dead Channel |
 | Poison Jam | Toxic Spill |
+| Cube | Night Drive |
+| Garam | High Wire |
+| Boogie | Downbeat |
+| Rhyth | Stutter Step |
+| Jazz | Blue Note |
+| Clutch | Scrapyard |
+| Rapid 99 | Nine Lives |
+| Noise Tank | Feedback |
 
-**Free Skate.** Each lead opens with their signature. After short cruising breaks, the crew works through all 15 routines before recycling the set. Five routines give two skaters different parts. Choose a duet partner, leave the deck on automatic to rotate through the other six, or skate solo. Reduced motion disables automatic routines and holds a pose during manual tricks.
+**Free Skate.** Each lead opens with their signature. After short cruising breaks, the crew works through all 24 routines before recycling the set. Five routines give two skaters different parts. Choose a duet partner, leave the deck on automatic to rotate through the other riders, or skate solo. Reduced motion disables automatic routines and holds a pose during manual tricks.
 
 **Tricks.** The book shows the steps for every routine. Thirteen new lines run seven to nine moves each, plus the original Sidewinder and Air mail. Try crossover, toe manual, rocket air, fishbrain grind, flatspin and wallride individually. Selecting a trick takes over from an automatic routine immediately. Click the lead to dance or right-click for the deck.
 
@@ -26,11 +34,23 @@ Open the bottom-left cassette and pick **Yo-Yo** under **Crew**. Set his duet pa
 
 **Cursor trail and tabs.** Draw a route for your lead to follow after a one-to-eight-second delay (four seconds by default). The trail holds up to 60 pickup cans. Beat follows the focused script-enabled tab. “Jump to another tab” cycles through open pages and holds a background destination for 45 seconds. The line, current step, partner and score can travel between tabs. Cursor paths stay local.
 
+## Manual, page exploration and practice yard
+
+Choose **Steer now** for arrow movement, Space jump, G grind and T tag. Text fields and menu controls retain their keyboard behavior. **Tap to step** offers pointer-operated movement. In **Practice skatepark**, movement stays inside the court, the ledge blocks walking, and grinding requires proximity to the fixed rail. Follow markers 1–4 for a lap. Lap counts are session-only; they are not campaign saves.
+
+**Page exploration** samples visible geometric edges without reading text, form values or URLs. It temporarily hides the park backdrop without discarding your selection. There are bounded DOM scans, and no page geometry is persisted. This is 2D edge skating, not a full 3D understanding of a webpage.
+
+## District tour and live rivals
+
+Six districts keep tags, collected paint cans, best banked scores, crew medals and three-move contract progress. The original route is three deliberate tags, three cans, and the district score target or crew victory. Alternatively complete the district-specific contract and win a crew relay. Previous clears remain valid. Progress is monotonic when multiple tabs share updates.
+
+**Live rival** runs a 45-second local AI exhibition with actual trick scoring. **Rival crew relay** hands between three distinct opponent riders with differentiated trick sets. Only a completed winning crew match started in the active tour district can earn its medal. Ties, cancellations and solo exhibitions do not. These are local opponents, not online multiplayer. Existing three-person player crew routines remain available separately.
+
 ## Beat FM
 
 The [19-second dial sampler](docs/beat-fm-sampler.mp3) recreates the hooks of Wisteria Underpass, Kerosene Laces, Peach Soda Static and Exit Through the Moonroof from the release’s note and synthesizer schedules.
 
-Choose a track under **Radio** and press **Play radio**. Use the previous and next buttons to change tracks, or choose sequence, shuffle or repeat. The station synthesizes its music locally. The volume, selected track and playback order are saved. Leaving the tab silences playback.
+Choose a track under **Radio** and press **Play radio**. Use the previous and next buttons to change tracks, or choose sequence, shuffle or repeat. The station synthesizes its 15 original tracks locally, not official JSRF recordings. DJ arrangements offer Original, Drum break, Dub breakdown and Peak-time hooks; changes enter at the next bar while existing notes fade naturally. The volume, selected track, playback order and DJ arrangement are saved. Leaving the tab silences playback.
 
 | Track | Style | BPM |
 |---|---|---:|
@@ -63,3 +83,9 @@ Tab to the cassette and press Enter. Use the arrow keys to switch tabs and Escap
 Run `node build.cjs` to rebuild the script, update metadata and preview. Run `npm ci` and `npm test` for the engine, soundtrack, tab, deck, native-rendering and packaged integration tests.
 
 [Sprite sheets and credits](assets/README.md) · [Public art gallery](https://github.com/slllky/tampermonkey-art/tree/main/review/beat) · [Browser Companions](../README.md)
+
+## Candidate validation
+
+Engine, UI integration, native rendering, save migration and cross-tab protocol tests run locally. Offline Web Audio rendering of all 15 tracks in all four arrangements produced finite non-silent output without clipping at default volume. Browser previews demonstrated page traversal, protected text input, crew routines and live AI scoring. Actual Tampermonkey installation, real hardware-key testing and subjective listening acceptance have not been verified in this environment. No denied computer-control operation was bypassed.
+
+The shipped production entry retains its existing name, namespace, settings prefix and updater URLs. Separately delivered DRAFT scripts disable updates and isolate preferences; disable those when returning to the production entry. Do not run competing Beat versions together.

@@ -10,7 +10,8 @@ const BeatPanel = (() => {
   };
   const toggleFields = {hidden:'Show skater', ambient:'Auto combos in Free skate', interact:'Clickable skater'};
   const pickFields = {
-    mode:['Skating mode',{idle:'Free skate',follow:'Cursor trail'}],
+    district:['Park backdrop',{off:'Website (transparent)',spool:'Spool',crane:'Crane',canal:'Canal',foundry:'Foundry',signal:'Signal',terminal:'Terminal'}],
+    mode:['Skating mode',{idle:'Free skate',follow:'Cursor trail',manual:'Manual arrows',page:'Page exploration',park:'Practice skatepark'}],
     skin:['Beat’s sprite set',{remix:'Remix',classic:'Classic'}],
     accent:['Paint color',{lime:'Lime',pink:'Pink',cyan:'Cyan'}],
     fx:['Visual effects',{off:'Off',low:'Low',full:'Full'}],
@@ -19,7 +20,7 @@ const BeatPanel = (() => {
 
   function mount(root, {
     settings,moves,lines,riders={beat:'Beat'},signatures={},duets=[],lineMoves={},tracks=[],portraits:initialPortraits={},
-    onChange,onMove,onJump,onRadio,onVolume,onTrack,onStationStep,onOrder
+    onChange,onMove,onJump,onRadio,onVolume,onTrack,onStationStep,onOrder,onTourStart,onTourNext,onTourStop,onSteer,onRival,onArrangement,onPad
   }) {
     const doc = root.ownerDocument;
     const ui = doc.createElement('div');
@@ -50,8 +51,8 @@ const BeatPanel = (() => {
             <button type="button" class="bt-featured" hidden><span>Run signature</span><strong></strong><i aria-hidden="true">▷</i></button>
             <div class="bt-select bt-partner"><label for="bt-control-partner">Duet partner</label><select id="bt-control-partner"></select></div>
             <div class="bt-switches"><div data-field="ambient"></div></div>
-            <div data-field="mode"></div>
-            <p class="bt-trail-help" hidden>Move your cursor to leave paint cans for your skater.</p>
+            <div data-field="mode"></div><p class="bt-manual-help">Practice skatepark: arrows to navigate, follow four numbered markers for a lap; G near the rail to grind. Manual: choose Steer now, then arrow keys to skate, Space to jump, G to grind, T to tag. Keys do not override text fields or menu controls.</p><button type="button" class="bt-steer">Steer now</button><div class="bt-step-pad" role="group" aria-label="Tap steering"><p>Tap to step (manual or practice yard)</p><button type="button" data-pad="up" aria-label="Step up">↑</button><button type="button" data-pad="left" aria-label="Step left">←</button><button type="button" data-pad="down" aria-label="Step down">↓</button><button type="button" data-pad="right" aria-label="Step right">→</button></div><div data-field="district"></div><p class="bt-page-backdrop" hidden>Page exploration / practice park temporarily hides your park backdrop. Your chosen park returns when you leave this mode.</p><button type="button" class="bt-rival">Start / stop live rival (45s)</button><button type="button" class="bt-rival-crew">Challenge rival crew relay</button><p class="bt-rival-status">Local exhibition: score earned from live tricks, separate from tour unlocks.</p><section class="bt-tour"><h3>District tour</h3><p class="bt-tour-progress"></p><button type="button" class="bt-tour-start">Start / resume tour</button><button type="button" class="bt-tour-next" disabled>Next district</button><button type="button" class="bt-tour-stop">Leave tour</button></section>
+            <p>Page exploration hops between visible content edges. It only samples nearby layout, never page text or inputs. Empty pages use the floor.</p><p class="bt-trail-help" hidden>Move your cursor to leave paint cans for your skater.</p>
             <div data-field="delay" hidden></div>
             <button type="button" class="bt-hop">Jump to another tab <span aria-hidden="true">↗</span></button>
           </section>
@@ -73,7 +74,7 @@ const BeatPanel = (() => {
             <div class="bt-select"><label for="bt-order">Playback order</label><select id="bt-order">
               <option value="sequence">Play in order</option><option value="shuffle">Shuffle tracks</option><option value="loop">Repeat track</option>
             </select></div>
-            <div class="bt-fader bt-volume"><label for="bt-volume">Volume</label><span class="bt-volume-value" aria-hidden="true">35%</span>
+            <div class="bt-select"><label for="bt-arrangement">DJ arrangement</label><select id="bt-arrangement"><option value="original">Original mix</option><option value="breaks">Drum break</option><option value="dub">Dub breakdown</option><option value="peak">Peak-time hooks</option></select></div><p>15 original synthesized tracks, not official JSRF recordings. DJ changes enter on the next bar; existing notes fade naturally.</p><div class="bt-fader bt-volume"><label for="bt-volume">Volume</label><span class="bt-volume-value" aria-hidden="true">35%</span>
               <input id="bt-volume" type="range" min="0" max="100" step="1" value="35" aria-valuetext="35 percent">
             </div>
           </section>
@@ -127,6 +128,15 @@ const BeatPanel = (() => {
       status(typeof result === 'string' ? result : result === false ? 'Move unavailable. Try again in a moment.' : name);
     }
     const mugshots = new Map();
+    for(const b of ui.querySelectorAll('[data-pad]'))b.addEventListener('click',()=>onPad?.(b.dataset.pad));
+    get('.bt-steer').addEventListener('click',()=>onSteer?.());
+    get('.bt-rival').addEventListener('click',()=>onRival?.(false));
+    get('.bt-rival-crew').addEventListener('click',()=>onRival?.(true));
+    function rival(text){get('.bt-rival-status').textContent=text;}
+    get('.bt-tour-start').addEventListener('click',()=>onTourStart?.());
+    get('.bt-tour-next').addEventListener('click',()=>onTourNext?.());
+    get('.bt-tour-stop').addEventListener('click',()=>onTourStop?.());
+    function tour(text,canNext=false){get('.bt-tour-progress').textContent=text;get('.bt-tour-next').disabled=!canNext;}
     const riderInputs = new Map();
     const roster = get('.bt-roster');
     const partner = get('#bt-control-partner');
@@ -223,7 +233,7 @@ const BeatPanel = (() => {
     }
     for (const [key,[title,choices]] of Object.entries(pickFields)) {
       const row = get(`[data-field="${key}"]`);
-      if (key === 'motion' || key === 'fx') {
+      if (key === 'motion' || key === 'fx' || key === 'district') {
         row.className = 'bt-select';
         const label = append(row,'label',title);
         const select = append(row,'select');
@@ -268,7 +278,7 @@ const BeatPanel = (() => {
     const lineEntries = Object.entries(lines);
     const lineGroups = [
       ['Crew signatures',lineEntries.filter(([id]) => signatureOwners[id])],
-      ['Duets',lineEntries.filter(([id]) => duets.includes(id))],
+      ['Crew routines',lineEntries.filter(([id]) => duets.includes(id))],
       ['Street lines',lineEntries.filter(([id]) => !signatureOwners[id] && !duets.includes(id))]
     ];
     for (const [title,entries] of lineGroups) {
@@ -279,7 +289,7 @@ const BeatPanel = (() => {
       for (const [id,name] of entries) {
         const button = pad(group,id,name);
         const label = append(button,'b',name);
-        const info = [signatureOwners[id],duets.includes(id) ? 'Duet' : ''].filter(Boolean).join(' · ');
+        const info = [signatureOwners[id],id==='crewrelay'?'Three-person relay':duets.includes(id) ? 'Duet' : ''].filter(Boolean).join(' · ');
         if (info) append(label,'small',info);
         const route = (lineMoves[id] || []).map(move => moves[move] || move);
         if (route.length) append(button,'span',route.join(' → '));
@@ -288,6 +298,8 @@ const BeatPanel = (() => {
     }
     const trackSelect = get('#bt-track');
     const orderSelect = get('#bt-order');
+    function arrangement(value){selectValue(get('#bt-arrangement'),value);}
+    get('#bt-arrangement').addEventListener('change',()=>onArrangement?.(get('#bt-arrangement').value));
     for (const track of tracks) append(trackSelect,'option',track.title).value = track.id;
     function station(record,order) {
       const track = typeof record === 'string' ? tracks.find(entry => entry.id === record) : record;
@@ -343,6 +355,8 @@ const BeatPanel = (() => {
         for (const option of partner.options) option.disabled = option.value === state.rider;
         selectValue(partner,state.partner === state.rider ? 'auto' : state.partner);
       }
+      get('#bt-control-district').disabled=['page','park'].includes(state.mode);
+      get('.bt-page-backdrop').hidden=state.mode!=='page';
       ui.dataset.accent = state.accent;
       ui.dataset.motion = state.motion;
       get('[data-field="delay"]').hidden = state.mode !== 'follow';
@@ -436,7 +450,7 @@ const BeatPanel = (() => {
     dockObserver?.observe(doc.documentElement,{childList:true});
     sync({rider:'beat',partner:'auto',...settings});
     return {
-      open,close,toggle,isOpen:() => !panel.hidden,sync,stats,status,audio,station,portraits,
+      open,close,toggle,isOpen:() => !panel.hidden,sync,stats,status,audio,station,portraits,tour,rival,arrangement,
       destroy() {
         doc.removeEventListener('pointerdown',outside,true);
         dockObserver?.disconnect();
