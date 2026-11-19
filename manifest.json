@@ -8,10 +8,10 @@
   },
   {
     "name": "Beat — Browser Skater",
-    "version": "4.0.0",
+    "version": "4.1.0",
     "category": "companions",
     "path": "companions/beat/Beat-Browser-Skater.user.js",
-    "sha256": "8c10e3d9ff5ec5aa648a8adbf19719250d6e75abfd6d605055284ced68a1553e"
+    "sha256": "e2f624873658e8dd4ce08ba541d1e79cafc8d33ab203077e325c21ad773a7187"
   },
   {
     "name": "Jake — Stretch Walker",

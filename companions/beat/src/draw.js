@@ -12,25 +12,32 @@ const BeatDraw = (() => {
   const bounded = v => clamp(v,0,1);
   const cycle = t => t-Math.floor(t);
   const fullCircle = 2*Math.PI;
-  function frameFor(actor, meta, gentle) {
+  function sampleFrame(actor, meta, gentle) {
     const key = meta.animations[actor.action]?.length ? actor.action : (classicPoses[actor.action] || 'idle');
     const fallback=classicPoses[key];
-    const seq = meta.animations[key] || meta.animations[fallback] || meta.animations.idle;
-    if (!seq?.length) return 0;
-    if (gentle) return seq[key==='idle'||key==='skate' ? 0 : Math.floor(seq.length/2)];
-    const loops = cycles.has(actor.action);
-    const durations = meta.durations?.[key];
-    const weighted = Array.isArray(durations) && durations.length===seq.length;
-    const total = weighted ? durations.reduce((sum,n)=>sum+n,0) : seq.length*(timing[key] || 140);
-    const at = loops ? (Math.max(0,actor.elapsed)*1000)%total : bounded(actor.progress)*total;
-    if (!weighted) return seq[Math.min(seq.length-1,Math.floor(at/(timing[key] || 140)))];
-    let end=0;
-    for(let i=0;i<seq.length;i++) { end+=durations[i]; if(at<end)return seq[i]; }
-    return seq[seq.length-1];
+    const seq=meta.animations[key] || meta.animations[fallback] || meta.animations.idle;
+    if (!seq?.length) return {n:0,next:0,fraction:0};
+    if (gentle) {
+      const n=seq[key==='idle'||key==='skate' ? 0 : Math.floor(seq.length/2)];
+      return {n,next:n,fraction:0};
+    }
+    const loops=cycles.has(actor.action), durations=meta.durations?.[key];
+    const weighted=Array.isArray(durations)&&durations.length===seq.length&&durations.every(ms=>Number.isFinite(ms)&&ms>0);
+    const ms=timing[key]||140, total=weighted?durations.reduce((a,b)=>a+b,0):seq.length*ms;
+    const at=loops?(Math.max(0,actor.elapsed)*1000)%total:bounded(actor.progress)*total;
+    let i=0,start=0;
+    if(weighted){while(i<seq.length-1&&at>=start+durations[i])start+=durations[i++];}
+    else {i=Math.min(seq.length-1,Math.floor(at/ms));start=i*ms;}
+    const n=seq[i],next=seq[i+1]??(loops?seq[0]:n);
+    return {n,next,fraction:bounded((at-start)/(weighted?durations[i]:ms))};
   }
+  const frameFor=(actor,meta,gentle)=>sampleFrame(actor,meta,gentle).n;
   function geometry(actor,asset,scale,gentle) {
-    const meta=asset.frames, n=frameFor(actor,meta,gentle), pivot=meta.pivot||[64,116];
-    const cell=meta.cell, b=meta.bounds?.[n] || [0,0,cell,cell];
+    const meta=asset.frames, {n,next,fraction}=sampleFrame(actor,meta,gentle), pivot=meta.pivot||[64,116];
+    const motion=asset.motion;
+    const inbetweens=!gentle&&motion?.image&&n!==next&&fraction>=1/3?motion.pairs[n+':'+next]:null;
+    const mid=inbetweens?.[fraction>=2/3?1:0];
+    const cell=meta.cell, b=motion?.bounds?.[mid] || meta.bounds?.[n] || [0,0,cell,cell];
     const facing=meta.facing ?? 1;
     const turn=['spin','heelflip','bio','rewind'].includes(actor.action) && !gentle ? Math.cos(bounded(actor.progress)*fullCircle) : 1;
     const fold=.49+.51*Math.abs(turn);
@@ -42,7 +49,7 @@ const BeatDraw = (() => {
     const left=(b[0]-pivot[0]+Math.min(lean*top,lean*bottom))*fold;
     const right=(b[2]-pivot[0]+Math.max(lean*top,lean*bottom))*fold;
     const x=Math.round(actor.x),y=Math.round(actor.y);
-    return {n,flip,fold,lean,x,y,rect:{x:x+(flip ? -right : left)*scale,
+    return {n,mid,flip,fold,lean,x,y,rect:{x:x+(flip ? -right : left)*scale,
       y:y+top*scale,width:(right-left)*scale,height:(bottom-top)*scale}};
   }
   function poly(g,points,fill) {
@@ -143,14 +150,15 @@ const BeatDraw = (() => {
     g.globalAlpha=.20*a.alpha/(1+alt/45);ellipse(g,x,y,rx,ry,ink);g.restore();
   }
   function drawActor(renderer,a,asset,pose,s) {
-    const g=renderer.ctx,{n,x,y,flip,fold,lean,rect:b}=pose,meta=asset.frames;
-    const {cell,columns,pivot=[64,116]}=meta;
+    const g=renderer.ctx,{n,mid,x,y,flip,fold,lean,rect:b}=pose,meta=asset.frames;
+    const {cell,pivot=[64,116]}=meta;
+    const tween=mid!==undefined, columns=tween?asset.motion.columns:meta.columns, index=tween?mid:n;
     renderer.region(b.x,b.y,b.width,b.height);
     g.save();g.globalAlpha=bounded(a.alpha);g.translate(x,y);
     const horizontal=(flip?-1:1)*s*fold;
     g.transform(horizontal,0,horizontal*lean,s,0,0);
     g.imageSmoothingEnabled=false;
-    g.drawImage(asset.image,(n%columns)*cell,Math.floor(n/columns)*cell,cell,cell,-pivot[0],-pivot[1],cell,cell);
+    g.drawImage(tween?asset.motion.image:asset.image,(index%columns)*cell,Math.floor(index/columns)*cell,cell,cell,-pivot[0],-pivot[1],cell,cell);
     g.restore();
   }
   // Light reflects off the engaged wheel; aerial moves use a longer arc around the rider.
@@ -271,6 +279,7 @@ const BeatDraw = (() => {
     drawRider(actor,w,accent,level) {
       const asset=actor && this.assetFor(actor,w);
       if(!asset?.image || actor.alpha<=0)return null;
+      if(!w.gentle)asset.loadMotion?.();
       const pose=geometry(actor,asset,w.scale,w.gentle);
       if(level!=='off')shadow(this,w,actor);
       drawActor(this,actor,asset,pose,w.scale);
@@ -344,6 +353,6 @@ const BeatDraw = (() => {
       if(this.hitBox)combo(this,w,accent,this.hitBox);
     }
   }
-  return {Renderer,frameFor,geometry};
+  return {Renderer,frameFor,sampleFrame,geometry};
 })();
 if(typeof module!=='undefined'&&module.exports)module.exports=BeatDraw;

@@ -60,7 +60,7 @@
   const ctx = canvas.getContext('2d');
   let view = null, pages = null, owned = false, suspended = false, disposed = false;
   let summoningForMove = false;
-  let raf = 0, frameTime = null, ratio = 1, width = 1, height = 1, statsStamp = '';
+  let raf = 0, frameTime = null, nextPaint = 0, ratio = 1, width = 1, height = 1, statsStamp = '';
   const cleanup = [];
   let panel = null;
   let order = validOrder(read('order-v3','sequence'));
@@ -235,7 +235,11 @@
   function tick(now) {
     raf = 0;
     if (!hasStage()) { updateLoop(); return; }
-    if (frameTime === null || now-frameTime >= 1000/40-1) {
+    const interval=1000/60;
+    if (frameTime === null || now >= nextPaint-.65) {
+      // Don't drop every other refresh at 60 Hz; carry the display deadline
+      // on high-refresh screens without allowing catch-up paint bursts.
+      nextPaint=frameTime===null||now-nextPaint>interval?now+interval:nextPaint+interval;
       const dt = frameTime === null ? 0 : Math.min(.08, (now-frameTime)/1000);
       frameTime = now;
       if(world.settings.mode==='page'&&now>=geometryAt){
@@ -341,6 +345,8 @@
     if (!event.persisted) {
       disposed = true; pages.destroy();
       for (const off of cleanup.splice(0)) off();
+      for (const {asset} of motionCache.values()) { asset.motion?.image.close?.(); delete asset.motion; }
+      motionCache.clear();
       panel.destroy(); host.remove();
     }
   });
@@ -364,10 +370,32 @@
       image.src = 'data:image/png;base64,' + data;
     });
   }
+  // Decode only recently used motion atlases. Retain the original art on
+  // slow/unsupported decoders, and release inactive bitmaps when changing crews.
+  const motionCache=new Map();
+  function loadMotion(id,asset,entry) {
+    if (motionCache.has(id)) {
+      const current=motionCache.get(id);motionCache.delete(id);motionCache.set(id,current);return;
+    }
+    const token={asset};
+    motionCache.set(id,token);
+    while(motionCache.size>5) {
+      const key=motionCache.keys().next().value, stale=motionCache.get(key);
+      motionCache.delete(key);
+      stale.asset.motion?.image.close?.();delete stale.asset.motion;
+    }
+    const {data,...meta}=entry;
+    decode(data).then(image=>{
+      if(disposed||motionCache.get(id)!==token){image.close?.();return;}
+      asset.motion={...meta,image};
+    }).catch(()=>{}); // Motion is optional; original cels still draw.
+  }
   scorePanel(); resize();
-  Promise.all(Object.entries(bundles).map(async ([id,entry]) =>
-    [id,{frames:entry.frames,image:await decode(entry.data)}]
-  )).then(entries => {
+  Promise.all(Object.entries(bundles).map(async ([id,entry]) => {
+    const asset={frames:entry.frames,image:await decode(entry.data)};
+    if(entry.motion)asset.loadMotion=()=>loadMotion(id,asset,entry.motion);
+    return [id,asset];
+  })).then(entries => {
     if (disposed) return;
     if (!ctx) throw Error('Canvas unavailable');
     view = new BeatDraw.Renderer(ctx,Object.fromEntries(entries));

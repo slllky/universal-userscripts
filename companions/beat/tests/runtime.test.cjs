@@ -14,11 +14,15 @@ function fixture(initial = {}, preview = false) {
   const {document,HTMLElement,HTMLCanvasElement,Event} = window;
   const storage = new Map(Object.entries(initial)), menus = new Map(), subs = new Map();
   const buffers = new WeakMap(), images = [], frames = new Map(), timers = new Map();
-  let root, serial = 0, time = 0;
+  let root, serial = 0, time = 0, draws=0;
   const attach = HTMLElement.prototype.attachShadow;
   HTMLElement.prototype.attachShadow = function(opts) { root = attach.call(this,opts); return root; };
   HTMLCanvasElement.prototype.getContext = function() {
-    if (!buffers.has(this)) buffers.set(this,createCanvas(300,150));
+    if (!buffers.has(this)) {
+      const cv=createCanvas(300,150), ctx=cv.getContext('2d'), draw=ctx.drawImage.bind(ctx);
+      ctx.drawImage=(...args)=>{draws++;return draw(...args)};
+      buffers.set(this,cv);
+    }
     return buffers.get(this).getContext('2d');
   };
   for (const k of ['width','height']) Object.defineProperty(HTMLCanvasElement.prototype,k,{configurable:true,
@@ -49,7 +53,8 @@ function fixture(initial = {}, preview = false) {
   return {window,document,storage,menus,images,frames,timers,subs,run,Event,
     get ready() {return Promise.all(images).then(() => new Promise(resolve => setImmediate(resolve)));},
     q:selector => root.querySelector(selector),
-    pump(n) {for (let i=0;i<n;i++) {time+=32; const batch=Array.from(frames.values()); frames.clear(); for(const fn of batch) fn(time);}},
+    drawCount:()=>draws,
+    pump(n,ms=32) {for (let i=0;i<n;i++) {time+=ms; const batch=Array.from(frames.values()); frames.clear(); for(const fn of batch) fn(time);}},
     remote(k,v) {storage.set(k,structuredClone(v)); for (const [key,fn] of subs.values()) if (key===k) fn(k,null,v,true);},
     hasInk() {return buffers.get(root.querySelector('canvas')).getContext('2d').getImageData(0,0,800,480).data.some((v,i) => i%4===3 && v>32);}
   };
@@ -205,4 +210,14 @@ test('manual mode preserves empty and plaintext-only editable hosts',async()=>{
 });
 test('focusing a host editor releases held movement without consuming its keys',async()=>{
  const f=fixture({'beat-skater-v1:settings':{mode:'manual',ambient:false,motion:'reduced'}});await f.ready;f.pump(40);f.q('.bt-steer').click();const cv=f.q('canvas.beat-stage'),down=new f.Event('keydown',{bubbles:true,cancelable:true});Object.assign(down,{key:'ArrowRight',code:'ArrowRight'});cv.dispatchEvent(down);f.pump(2);const editor=f.document.createElement('div');editor.setAttribute('contenteditable','');f.document.body.append(editor);editor.dispatchEvent(new f.Event('focusin',{bubbles:true}));f.pump(2);const before=f.q('.beat-hit').style.transform;f.pump(10);assert.equal(f.q('.beat-hit').style.transform,before);f.window.dispatchEvent(new f.Event('pagehide'));
+});
+
+test('render clock paints near 60 times per second at both 60 Hz and 144 Hz',async()=>{
+  for(const hz of [60,144]){
+    const f=fixture({'beat-skater-v1:settings':{mode:'manual',ambient:false,fx:'off',motion:'reduced'}});
+    await f.ready;f.pump(1,1000/hz);
+    const before=f.drawCount();f.pump(hz,1000/hz);
+    assert.ok(f.drawCount()-before>=59 && f.drawCount()-before<=61,hz+' Hz: '+(f.drawCount()-before)+' draws');
+    f.document.dispatchEvent(new f.Event('visibilitychange'));
+  }
 });

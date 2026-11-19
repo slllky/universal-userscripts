@@ -33,6 +33,10 @@ const bundles = Object.fromEntries(['remix','classic','street','gum','combo','yo
   if (png.readUInt32BE(0) !== 0x89504e47) throw Error('Expected PNG for ' + id);
   const entry = {frames,data:png.toString('base64')};
   if (id !== 'classic' && id !== 'street' && id !== 'parks') entry.portrait = fs.readFileSync(path.join(dir,base+'portrait.png')).toString('base64');
+  if (fs.existsSync(path.join(dir,base+'motion.json'))) {
+    const motion=JSON.parse(read(base+'motion.json'));
+    entry.motion={...motion,data:fs.readFileSync(path.join(dir,base+'motion.png')).toString('base64')};
+  }
   return [id,entry];
 }));
 const parts = ['park','engine','pages','audio','draw','tour','geometry','rival','panel','app'].map(id => read('src/' + id + '.js'));

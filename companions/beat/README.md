@@ -1,8 +1,10 @@
 # Beat — Browser Skater
 
-**Version 4.0.0** · [Install or update in Tampermonkey](https://raw.githubusercontent.com/slllky/universal-userscripts/main/companions/beat/Beat-Browser-Skater.user.js) · [Hear the station sampler](docs/beat-fm-sampler.mp3)
+**Version 4.1.0** · [Install or update in Tampermonkey](https://raw.githubusercontent.com/slllky/universal-userscripts/main/companions/beat/Beat-Browser-Skater.user.js) · [Hear the station sampler](docs/beat-fm-sampler.mp3)
 
-![Previous seven-rider release preview](docs/beat-motion.gif)
+[See the original vs. smoother motion side by side](docs/Beat-4.1-Motion-Comparison.mp4)
+
+**New in 4.1:** 1,502 in-between sprite frames across all 15 riders and both Beat skins. The renderer draws at up to 60 fps and fits the new poses into the original animation intervals. Reduced Motion still holds poses. Intentional holds and hard cuts are preserved.
 
 Open the bottom-left cassette and pick **Yo-Yo** under **Crew**. Set his duet partner to **Corn**, leave **Free skate** and **Auto combos in Free skate** on, and give them four seconds. Yo-Yo opens with a crossover while Corn answers with a toe manual. The pair trade parts until they finish the seven-step Yo-Yo Exchange. The live card shows the performers and current step.
 
@@ -80,12 +82,12 @@ For a standalone preview, download [Beat-Preview.html](Beat-Preview.html) and op
 
 Tab to the cassette and press Enter. Use the arrow keys to switch tabs and Escape to close. Enter or Space on the lead starts a dance, and Shift+F10 opens the controls. The cassette and Tampermonkey’s **Beat: controls / bring here** command stay available when the skater is hidden.
 
-Run `node build.cjs` to rebuild the script, update metadata and preview. Run `npm ci` and `npm test` for the engine, soundtrack, tab, deck, native-rendering and packaged integration tests.
+Run `node build.cjs` to rebuild the script, update metadata and preview. Motion atlases are checked in; to regenerate them from the original art, run `python tools/build-motion.py` with NumPy, Pillow and SciPy installed. Run `npm ci` and `npm test` for the engine, soundtrack, tab, deck, native-rendering and packaged integration tests.
 
 [Sprite sheets and credits](assets/README.md) · [Public art gallery](https://github.com/slllky/tampermonkey-art/tree/main/review/beat) · [Browser Companions](../README.md)
 
-## Candidate validation
+## Validation
 
-Engine, UI integration, native rendering, save migration and cross-tab protocol tests run locally. Offline Web Audio rendering of all 15 tracks in all four arrangements produced finite non-silent output without clipping at default volume. Browser previews demonstrated page traversal, protected text input, crew routines and live AI scoring. Actual Tampermonkey installation, real hardware-key testing and subjective listening acceptance have not been verified in this environment. No denied computer-control operation was bypassed.
+The 4.1 build passed 96 automated checks, including all motion atlas bounds and representative drawing at 60 Hz and 144 Hz. Engine, UI integration, native rendering, save migration and cross-tab protocol tests run locally. Offline Web Audio rendering of all 15 tracks in all four arrangements produced finite non-silent output without clipping at default volume. Browser previews demonstrated page traversal, protected text input, crew routines and live AI scoring. Actual Tampermonkey installation, real hardware-key testing and subjective listening acceptance have not been verified in this environment. No denied computer-control operation was bypassed.
 
 The shipped production entry retains its existing name, namespace, settings prefix and updater URLs. Separately delivered DRAFT scripts disable updates and isolate preferences; disable those when returning to the production entry. Do not run competing Beat versions together.
