@@ -1,6 +1,6 @@
 # Universal Userscripts
 
-Aseerr / slllky’s collection of **13 Tampermonkey scripts**, organized by what they do. Each script has its own folder with its current source, version, and installation notes.
+Aseerr / slllky’s collection of **14 Tampermonkey scripts**, organized by what they do. Each script has its own folder with its current source, version, and installation notes.
 
 ## Browse by purpose
 
@@ -8,7 +8,7 @@ Aseerr / slllky’s collection of **13 Tampermonkey scripts**, organized by what
 |---|---|---:|
 | [Browser Companions](companions/) | Animated characters that accompany you while browsing. | 5 |
 | [Custom Cursors](cursors/) | Cursor replacements and click animations. | 2 |
-| [Visual Effects](effects/) | Cursor trails and effects that appear while typing. | 4 |
+| [Visual Effects](effects/) | Themes, backgrounds, cursor trails, and typing effects. | 5 |
 | [Browser Games](games/) | Interactive games and playful activities on webpages. | 2 |
 
 ## Script catalog
@@ -26,6 +26,7 @@ Aseerr / slllky’s collection of **13 Tampermonkey scripts**, organized by what
 | Visual Effects | [Typing Flames](effects/typing-flames/) | 1.0.0 | [.user.js](effects/typing-flames/Typing-Flames.user.js) |
 | Visual Effects | [Typing Glitch](effects/typing-glitch/) | 1.0.1 | [.user.js](effects/typing-glitch/Typing-Glitch.user.js) |
 | Visual Effects | [Typing Hearts](effects/typing-hearts/) | 1.0.1 | [.user.js](effects/typing-hearts/Typing-Hearts.user.js) |
+| Visual Effects | [Universal Dark Mode & Custom Background](effects/universal-dark-mode-background/) | 1.0.0 | [.user.js](effects/universal-dark-mode-background/Universal-Dark-Mode-and-Custom-Background.user.js) · [ZIP](effects/universal-dark-mode-background/Universal-Dark-Mode-and-Custom-Background.zip) |
 | Browser Games | [Pokémon · Tampermonkey Edition](games/pokemon-tampermonkey-edition/) | 8.1.0 | [.user.js](games/pokemon-tampermonkey-edition/Pokemon-Tampermonkey-Edition.user.js) |
 | Browser Games | [Soccer Ball & Cleat Cursor](games/soccer-cleats/) | 1.1.0 | [.user.js](games/soccer-cleats/Soccer-Cleats.user.js) |
 

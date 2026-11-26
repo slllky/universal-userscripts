@@ -77,6 +77,13 @@
     "sha256": "2261b8e2642f28e0df81b4c32721803d541f0319fa01b8f04c3723ef16422aff"
   },
   {
+    "name": "Universal Dark Mode & Custom Background",
+    "version": "1.0.0",
+    "category": "effects",
+    "path": "effects/universal-dark-mode-background/Universal-Dark-Mode-and-Custom-Background.user.js",
+    "sha256": "b3eeaed88487764867da222099027345af4832e358feeba223d2c8b3bd16858b"
+  },
+  {
     "name": "Pokémon · Tampermonkey Edition",
     "version": "8.1.0",
     "category": "games",
